@@ -1,0 +1,6 @@
+[
+  { "id": "raids-unlock", "title": "First raids open", "date": "2026-12-09", "approxDate": "2026-12-09", "kind": "game-update", "instanceIds": ["barrow-deeps", "hyjal-summit", "onyxias-lair"], "detail": "Barrow Deeps · Hyjal Summit · Onyxia's Lair" },
+  { "id": "hardcore-mode", "title": "Hardcore mode", "approxDate": "2026-12-21", "dateLabel": "Winter 2026", "kind": "game-update", "instanceIds": [], "detail": "Date not announced" },
+  { "id": "spring-2027", "title": "Spring 2027 update", "approxDate": "2027-03-20", "dateLabel": "Spring 2027", "kind": "game-update", "instanceIds": [], "detail": "2 raids (10 and 20 player), 2 dungeons, new zone and quests, legendary questline, PvP season refresh" },
+  { "id": "summer-2027", "title": "Summer 2027 update", "approxDate": "2027-06-21", "dateLabel": "Summer 2027", "kind": "game-update", "instanceIds": [], "detail": "Revamped iconic raid, 1 new raid, 2 dungeons, expanded world content, PvP refresh, professions and Legacy updates" }
+]
