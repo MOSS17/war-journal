@@ -15,11 +15,11 @@ import { ACCOUNT } from './types';
 export type Difficulty = 'trivial' | 'easy' | 'even' | 'hard' | 'deadly';
 
 export const DIFFICULTY_COLOR: Record<Difficulty, string> = {
-  trivial: '#8A8072',
-  easy: '#7FBF68',
-  even: '#D9B54A',
-  hard: '#E0803A',
-  deadly: '#E0574A',
+  trivial: '#9D9D9D',
+  easy: '#40C040',
+  even: '#FFFF00',
+  hard: '#FF8040',
+  deadly: '#FF1A1A',
 };
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {

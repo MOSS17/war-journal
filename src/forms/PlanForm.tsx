@@ -306,10 +306,12 @@ export function PlanForm({
           <span className="lab" id="pf-type">
             What kind of plan?
           </span>
-          <div role="radiogroup" aria-labelledby="pf-type" className="tiles" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(76px, 1fr))', gap: 6 }}>
+          <div role="radiogroup" aria-labelledby="pf-type" className="tiles" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(76px, 1fr))' }}>
             {TYPES.map((t) => (
-              <button key={t.type} type="button" role="radio" aria-checked={type === t.type} className="tile icon" onClick={() => setType(t.type)}>
-                <PlanIcon type={t.type} />
+              <button key={t.type} type="button" role="radio" aria-checked={type === t.type} className="tile" onClick={() => setType(t.type)}>
+                <span className="ic" aria-hidden="true">
+                  <PlanIcon type={t.type} size={22} />
+                </span>
                 {t.label}
               </button>
             ))}
@@ -408,7 +410,7 @@ export function PlanForm({
         </div>
 
         {prog && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, background: `${DIFFICULTY_COLOR[prog.difficulty]}1a` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 4, background: 'rgba(0,0,0,.45)', borderLeft: '3px solid var(--crimson-rule)', textShadow: 'var(--shadow)' }}>
             <DiffDot d={prog.difficulty} />
             <span style={{ fontSize: 14 }}>
               <strong style={{ color: DIFFICULTY_COLOR[prog.difficulty] }}>{DIFFICULTY_LABEL[prog.difficulty]}</strong> for {ownerLabel}

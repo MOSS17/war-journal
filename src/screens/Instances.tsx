@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Page } from '../components/Shell';
-import { Check, ClassDot, DiffDot, Segmented, StatusPill } from '../components/ui';
+import { Check, ClassDot, Rivets, Segmented, StatusPill } from '../components/ui';
 import { Icon } from '../components/icons';
+import { ParchGrain } from '../components/Skyline';
 import { useOverlay } from '../components/overlay';
 import { db } from '../db/db';
 import { toggleQuest, updateInstance } from '../db/actions';
@@ -108,16 +109,16 @@ export function Instances() {
         style={{ opacity: dim ? 0.55 : 1 }}
       >
         <span className="name">
-          {char ? <DiffDot d={d} size={8} /> : <span className="dot" style={{ background: 'var(--dust)' }} />}
-          <span className="ellipsis">{i.name}</span>
+          <span className="ellipsis" style={{ color: char ? DIFFICULTY_COLOR[d] : 'var(--body)' }}>
+            {i.name}
+            {char && <span className="sr-only"> · {DIFFICULTY_LABEL[d]}</span>}
+          </span>
           {i.isNewInForever && <span className="pill new sm">New</span>}
           {i.territory === 'alliance' && <span className="pill ally sm">Alliance land</span>}
         </span>
         <span className="zone ellipsis">{i.zone}</span>
         <span className="num">{levelRange(i)}</span>
-        <span className="num size" style={{ color: 'var(--dust)' }}>
-          {i.size}
-        </span>
+        <span className="num size">{i.size}</span>
         <span style={{ justifySelf: 'start' }}>{char ? <StatusPill status={st} locked={locked} label={partial} /> : locked ? <StatusPill status="not-run" locked /> : null}</span>
       </button>
     );
@@ -134,7 +135,7 @@ export function Instances() {
         </button>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
         <div className="row-gap" style={{ gap: '10px 12px' }}>
           <Segmented
             label="Kind"
@@ -163,8 +164,8 @@ export function Instances() {
           </button>
           {active.length > 0 && (
             <label htmlFor="inst-char" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 14, color: 'var(--ash)' }}>Progress for</span>
-              <select id="inst-char" className="inp" style={{ width: 'auto', minHeight: 44 }} value={char?.id} onChange={(e) => set('c', e.target.value)}>
+              <span className="lab">Progress for</span>
+              <select id="inst-char" className="inp" style={{ width: 'auto' }} value={char?.id} onChange={(e) => set('c', e.target.value)}>
                 {active.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.firstName} {c.lastName} · {c.level}
@@ -176,7 +177,13 @@ export function Instances() {
         </div>
 
         <div className="split">
-          <section className="card" aria-label="Instance list" style={{ flex: '999 1 660px', minWidth: 0, padding: '6px 0' }}>
+          <section className="card" aria-label="Instance list" style={{ flex: '999 1 660px', minWidth: 0, padding: '40px 16px 18px' }}>
+            <Rivets />
+            <h2 className="plaque" aria-hidden="true">
+              Dungeon Finder
+            </h2>
+            <div className="well" style={{ overflowX: 'auto', padding: '6px 0' }}>
+            <div style={{ minWidth: 'min(600px, 100%)' }}>
             <div className="irow head" role="presentation">
               <span className="eyebrow">Instance</span>
               <span className="eyebrow zone">Zone</span>
@@ -185,43 +192,46 @@ export function Instances() {
               <span className="eyebrow">{char ? char.firstName : 'Status'}</span>
             </div>
             {hordeSide.length > 0 && (
-              <div style={{ padding: '14px 20px 6px' }}>
+              <div className="group-head">
                 <span className="eyebrow">Horde &amp; contested</span>
               </div>
             )}
             {hordeSide.map(row)}
             {allySide.length > 0 && (
-              <div style={{ padding: '18px 20px 6px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div className="group-head" style={{ paddingTop: 18 }}>
                 <span className="eyebrow">Alliance territory</span>
                 <span className="help">Possible as Horde, but you’ll travel through enemy land.</span>
               </div>
             )}
             {allySide.map(row)}
             {dungeons.length === 0 && kind !== 'raid' && (
-              <p className="muted" style={{ padding: '16px 20px' }}>
+              <p className="muted" style={{ padding: '16px 14px' }}>
                 No dungeons match these filters.
               </p>
             )}
             {raids.length > 0 && (
               <>
-                <div style={{ padding: '18px 20px 8px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="group-head" style={{ paddingTop: 18 }}>
                   <span className="eyebrow">Raids</span>
                   {raidUnlock && (
-                    <span className="pill main">
-                      Open {formatDate(raidUnlock)} · {daysBetween(today, raidUnlock)} days
+                    <span className="disp" style={{ fontSize: 13, color: '#ff8040' }}>
+                      · Open {formatDate(raidUnlock)} · {daysBetween(today, raidUnlock)} days
                     </span>
                   )}
                 </div>
                 {raids.map(row)}
               </>
             )}
+            </div>
+            </div>
           </section>
 
-          <aside ref={detailRef} className="card" aria-label="Selected instance" style={{ flex: '1 1 340px', padding: 0, overflow: 'hidden', minWidth: 0, scrollMarginTop: 16 }}>
+          <aside ref={detailRef} className="parch edged" aria-label="Selected instance" style={{ flex: '1 1 340px', minWidth: 0, scrollMarginTop: 16 }}>
+            <ParchGrain />
             {selected ? (
               <InstanceDetail inst={selected} char={char} chars={active} progress={ctx.progress} />
             ) : (
-              <p className="muted" style={{ padding: 24 }}>
+              <p className="muted" style={{ position: 'relative', padding: 26 }}>
                 Pick an instance to see its details.
               </p>
             )}
@@ -255,42 +265,33 @@ function InstanceDetail({
 
   return (
     <>
-      <div
-        style={{
-          padding: 24,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          background: 'radial-gradient(ellipse 90% 120% at 100% 0%, rgba(184,50,42,.24), transparent 60%)',
-          borderBottom: '1px solid rgba(233,200,150,.08)',
-        }}
-      >
-        <div className="row-gap" style={{ gap: 6 }}>
-          {inst.isNewInForever && <span className="pill new">New in Forever</span>}
-          {locked && <span className="pill locked">Opens {formatDate(inst.unlockDate!)}</span>}
-          {d && char && (
-            <span className="pill" style={{ background: `${DIFFICULTY_COLOR[d]}24`, color: DIFFICULTY_COLOR[d] }}>
-              <DiffDot d={d} size={7} glow={false} />
-              {DIFFICULTY_LABEL[d]} for {char.firstName}
-            </span>
-          )}
-        </div>
+      <div style={{ position: 'relative', padding: '28px 26px 6px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <span className="eyebrow" style={{ letterSpacing: '.12em' }}>
+          {inst.kind === 'raid' ? 'Raid' : 'Dungeon'} · {inst.size} player
+        </span>
         <div className="sect" style={{ alignItems: 'flex-start' }}>
-          <h2 className="disp" style={{ fontSize: 30, lineHeight: 1.05, color: 'var(--bone-hi)' }}>
-            {inst.name}
-          </h2>
+          <h2 style={{ fontSize: 30, lineHeight: 1.1 }}>{inst.name}</h2>
           <button type="button" className="iconbtn" aria-label={`Edit ${inst.name}`} onClick={() => open({ kind: 'instance', id: inst.id })}>
             <Icon.edit size={16} />
           </button>
         </div>
-        <span className="muted">
-          {inst.kind === 'raid' ? 'Raid' : 'Dungeon'} · {inst.size} player · {inst.zone} · <span style={{ whiteSpace: 'nowrap' }}>{levelRange(inst)}</span>
+        <span style={{ fontFamily: 'var(--f-ink)', fontSize: 16 }}>
+          {inst.zone} · <span style={{ whiteSpace: 'nowrap' }}>{levelRange(inst)}</span>
         </span>
+        <div className="row-gap" style={{ gap: 6 }}>
+          {inst.isNewInForever && <span className="pill">New in Forever</span>}
+          {locked && <span className="pill">Opens {formatDate(inst.unlockDate!)}</span>}
+          {d && char && (
+            <span className="pill" style={{ color: DIFFICULTY_COLOR[d] }}>
+              {DIFFICULTY_LABEL[d]} for {char.firstName}
+            </span>
+          )}
+        </div>
       </div>
-      <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ position: 'relative', padding: '16px 26px 28px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {chars.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span className="eyebrow">Your characters</span>
+            <h3>Your characters</h3>
             {chars.map((c) => {
               const rec = progress.find((p) => p.characterId === c.id && p.instanceId === inst.id);
               const rel = levelRelation(inst, c.level);
@@ -304,24 +305,25 @@ function InstanceDetail({
                     : rel.text;
               const qTotal = inst.quests.filter((q) => q.faction !== 'alliance').length;
               const qDone = rec ? inst.quests.filter((q) => q.faction !== 'alliance' && rec.questsDone.includes(q.id)).length : 0;
-              const color = rec?.status === 'cleared' ? 'var(--ok)' : rec?.status === 'run' ? 'var(--warn)' : rel.tone === 'deadly' || rel.tone === 'trivial' ? 'var(--dust)' : DIFFICULTY_COLOR[rel.tone];
+              const color =
+                rec?.status === 'cleared' ? '#2d6a12' : rec?.status === 'run' ? '#7a5a0a' : rel.tone === 'hard' || rel.tone === 'deadly' ? '#8a3a0a' : 'var(--ink-soft)';
               return (
                 <button
                   key={c.id}
                   type="button"
                   className="listrow"
                   onClick={() => open({ kind: 'instanceProgress', instanceId: inst.id, characterId: c.id })}
-                  style={{ justifyContent: 'space-between', background: 'none', border: 0, borderBottom: '1px solid rgba(233,200,150,.07)', color: 'inherit', font: 'inherit', cursor: 'pointer', width: '100%' }}
+                  style={{ justifyContent: 'space-between', fontFamily: 'var(--f-ink)' }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <ClassDot c={c} />
-                    <span style={{ fontWeight: 600 }}>
+                    <strong>
                       {c.firstName} · {c.level}
-                    </span>
+                    </strong>
                   </span>
-                  <span style={{ fontSize: 14, color }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color }}>
                     {txt}
-                    {qTotal > 0 && <span style={{ color: 'var(--dust)' }}> · {qDone}/{qTotal} quests</span>}
+                    {qTotal > 0 && <span style={{ fontWeight: 400, color: 'var(--ink-soft)' }}> · {qDone}/{qTotal} quests</span>}
                   </span>
                 </button>
               );
@@ -330,24 +332,25 @@ function InstanceDetail({
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="eyebrow">Getting in as Horde</span>
+          <h3>Getting in as Horde</h3>
           <div>
             <span className={`pill ${inst.territory === 'alliance' ? 'ally' : inst.territory === 'horde' ? 'horde' : ''}`}>{TERRITORY_LABEL[inst.territory]}</span>
           </div>
-          {inst.hordeAccess && <p style={{ fontSize: 15, color: 'var(--ash)', margin: 0 }}>{inst.hordeAccess}</p>}
+          {inst.hordeAccess && <p style={{ fontFamily: 'var(--f-ink)', fontSize: 16, margin: 0 }}>{inst.hordeAccess}</p>}
         </div>
 
         <QuestList inst={inst} char={char} progress={progress} />
 
         {inst.wings.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span className="eyebrow">Wings</span>
+            <h3>Wings</h3>
             <div className="row-gap" style={{ gap: 6 }}>
               {inst.wings.map((w) => {
                 const done = progress.some((p) => p.characterId === char?.id && p.instanceId === inst.id && (p.status === 'cleared' || p.wingsCleared.includes(w)));
                 return (
-                  <span key={w} className={`pill ${done ? 'cleared' : ''}`}>
+                  <span key={w} className="pill" style={done ? { background: '#2d6a12', borderColor: '#2d6a12', color: '#fff' } : undefined}>
                     {w}
+                    {done && <span className="sr-only"> (cleared)</span>}
                   </span>
                 );
               })}
@@ -356,7 +359,7 @@ function InstanceDetail({
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span className="eyebrow">Bosses</span>
+          <h3>Bosses</h3>
           {inst.bosses.length ? (
             <div className="row-gap" style={{ gap: 6 }}>
               {inst.bosses.map((b) => (
@@ -366,9 +369,9 @@ function InstanceDetail({
               ))}
             </div>
           ) : (
-            <span style={{ fontSize: 14, color: 'var(--ash)' }}>
+            <span style={{ fontFamily: 'var(--f-ink)', fontSize: 16 }}>
               Not confirmed yet.{' '}
-              <button type="button" className="linkbtn" onClick={() => open({ kind: 'instance', id: inst.id })}>
+              <button type="button" className="linkbtn" style={{ minHeight: 44 }} onClick={() => open({ kind: 'instance', id: inst.id })}>
                 Add them as you meet them.
               </button>
             </span>
@@ -376,8 +379,8 @@ function InstanceDetail({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <label className="eyebrow" htmlFor={`notes-${inst.id}`}>
-            My notes
+          <label htmlFor={`notes-${inst.id}`}>
+            <h3>My notes</h3>
           </label>
           <textarea
             id={`notes-${inst.id}`}
@@ -387,26 +390,25 @@ function InstanceDetail({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             onBlur={() => notes !== inst.notes && updateInstance(inst.id, { notes })}
-            style={{ fontSize: 15, background: 'rgba(233,200,150,.04)' }}
           />
           <span className="help">Saves when you click away.</span>
         </div>
 
         {(inst.guideLinks.length > 0 || (links && links.length > 0)) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span className="eyebrow">Guides &amp; Library</span>
+            <h3>Guides &amp; Library</h3>
             {inst.guideLinks.map((l) => (
-              <a key={l.url} href={l.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, textDecoration: 'none' }}>
+              <a key={l.url} href={l.url} target="_blank" rel="noreferrer">
                 {l.title || l.url} →
               </a>
             ))}
             {links?.map((l) =>
               l.kind === 'link' && l.url ? (
-                <a key={l.id} href={l.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, textDecoration: 'none' }}>
+                <a key={l.id} href={l.url} target="_blank" rel="noreferrer">
                   {l.title} →
                 </a>
               ) : (
-                <button key={l.id} type="button" className="linkbtn" style={{ textAlign: 'left', fontSize: 16 }} onClick={() => open({ kind: 'library', id: l.id })}>
+                <button key={l.id} type="button" className="linkbtn" style={{ textAlign: 'left' }} onClick={() => open({ kind: 'library', id: l.id })}>
                   {l.title} (note)
                 </button>
               ),
@@ -439,16 +441,16 @@ function QuestList({ inst, char, progress }: { inst: Instance; char?: Character;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div className="sect">
-        <span className="eyebrow">Quests</span>
+        <h3>Quests</h3>
         {char && mine.length > 0 && (
           <span className="help">
             {doneCount} of {mine.length} done for {char.firstName}
           </span>
         )}
       </div>
-      {inst.quests.length === 0 && <span style={{ fontSize: 14, color: 'var(--ash)' }}>No quests confirmed yet.</span>}
+      {inst.quests.length === 0 && <span style={{ fontFamily: 'var(--f-ink)', fontSize: 16 }}>No quests confirmed yet.</span>}
       {inst.quests.length > 0 && mine.length === 0 && (
-        <span style={{ fontSize: 14, color: 'var(--ash)' }}>No Horde quests for this one.</span>
+        <span style={{ fontFamily: 'var(--f-ink)', fontSize: 16 }}>No Horde quests for this one.</span>
       )}
       {mine.map((q) => (
         <div key={q.id} className="quest">
@@ -484,7 +486,7 @@ function QuestTitle({ q }: { q: InstanceQuest }) {
   const kind = QUEST_KIND_LABEL[q.kind];
   return (
     <span style={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-      <span style={{ fontWeight: 600 }}>{q.name}</span>
+      <span style={{ fontWeight: 700 }}>{q.name}</span>
       {kind && <span className="pill main sm">{kind}</span>}
       {!q.confirmed && <span className="pill locked sm">Unconfirmed</span>}
     </span>
@@ -499,7 +501,7 @@ function QuestBody({ q }: { q: InstanceQuest }) {
         {q.minLevel ? ` · level ${q.minLevel}+` : ''}
       </span>
       {q.prereq && <span>Requires: {q.prereq}</span>}
-      <span style={{ color: 'var(--bone)' }}>{q.howTo}</span>
+      <span style={{ color: 'var(--ink)' }}>{q.howTo}</span>
     </div>
   );
 }

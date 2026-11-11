@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { Avatar, Bar, DiffDot } from '../components/ui';
+import { Avatar, Bar, Rivets } from '../components/ui';
 import { Mark } from '../components/icons';
 import { useOverlay } from '../components/overlay';
-import { nextCountdown } from '../components/domain';
+import { PlanMini, nextCountdown } from '../components/domain';
 import { useEvents, usePlanContext, usePlans } from '../db/hooks';
 import { logMoment } from '../db/actions';
-import { DIFFICULTY_COLOR, daysBetween, formatDate, fullName, planProgress, todayISO } from '../lib/logic';
+import { daysBetween, formatDate, fullName, planProgress, todayISO } from '../lib/logic';
+import { CLASS_COLOR } from '../lib/gamedata';
 import { TonightList } from './WarBoard';
 
 /** A 420px-wide view to keep on a second screen while playing. */
@@ -43,29 +44,30 @@ export function Glance() {
 
   return (
     <main className="glance">
-      <div className="sect">
+      <Rivets />
+      <div className="sect" style={{ padding: '0 6px' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Mark size={22} />
-          <span className="eyebrow" style={{ color: 'var(--link)' }}>
+          <span className="eyebrow" style={{ fontSize: 13, letterSpacing: '.14em' }}>
             Tonight · {formatDate(today)}
           </span>
         </span>
-        <Link to="/" style={{ fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+        <Link to="/" className="linkbtn" style={{ fontSize: 13, minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>
           Full board →
         </Link>
       </div>
 
       {main ? (
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <Avatar c={main} size={64} />
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '0 6px' }}>
+          <Avatar c={main} size={74} />
           <div className="grow" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span className="disp" style={{ fontSize: 20, color: 'var(--bone-hi)' }}>
+            <span className="title" style={{ fontSize: 20, color: CLASS_COLOR[main.class] }}>
               {fullName(main)}
             </span>
             {main.level < 60 ? (
               <>
-                <Bar pct={main.xpPct / 100} kind="xp" height={8} label="Experience" />
-                <span className="tab" style={{ fontSize: 13, color: 'var(--ash)' }}>
+                <Bar pct={main.xpPct / 100} kind="xp" height={14} label="Experience" />
+                <span className="tab" style={{ fontSize: 13, color: 'var(--muted)' }}>
                   {main.xpPct}% to level {main.level + 1}
                 </span>
               </>
@@ -83,43 +85,33 @@ export function Glance() {
         </button>
       )}
 
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }} aria-labelledby="g-tonight">
-        <span id="g-tonight" className="eyebrow">
+      <section className="tracker" style={{ gap: 4, padding: '14px 12px' }} aria-labelledby="g-tonight">
+        <h2 id="g-tonight" className="title" style={{ fontSize: 19, marginBottom: 4 }}>
           Tonight's plan
-        </span>
+        </h2>
         <TonightList compact />
       </section>
 
       {top && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }} aria-labelledby="g-top">
-          <span id="g-top" className="eyebrow">
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 12px' }} aria-labelledby="g-top">
+          <span id="g-top" className="eyebrow" style={{ letterSpacing: '.04em', textTransform: 'none', fontSize: 13 }}>
             Top plan
           </span>
-          <Link to={`/plans?p=${top.plan.id}`} className="soft" style={{ padding: 14, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 10, color: 'var(--bone)', textDecoration: 'none' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <DiffDot d={top.prog.difficulty} />
-              <span className="grow" style={{ fontWeight: 600 }}>
-                {top.plan.title}
-              </span>
-              <span className="tab" style={{ fontSize: 13, color: 'var(--ash)' }}>
-                {top.prog.label}
-              </span>
-            </span>
-            <Bar pct={top.prog.pct} kind="plain" color={DIFFICULTY_COLOR[top.prog.difficulty]} height={4} label="Top plan progress" />
-          </Link>
+          <PlanMini plan={top.plan} prog={top.prog} />
         </section>
       )}
 
       {next && (
-        <div className="countdown-box">
-          <span className="disp tab" style={{ fontSize: 38, lineHeight: 0.9, color: 'var(--bone-hi)' }}>
+        <div className="notice" style={{ transform: 'rotate(-1.5deg)', display: 'flex', gap: 14, alignItems: 'center', padding: '18px 16px 14px' }}>
+          <span className="tack" aria-hidden="true" />
+          <span className="big tab" style={{ fontSize: 44 }}>
             {daysBetween(today, next.date!)}
           </span>
           <span style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontWeight: 600 }}>
+            <span style={{ fontWeight: 700, fontSize: 17 }}>
               day{daysBetween(today, next.date!) === 1 ? '' : 's'} until {next.title.toLowerCase()}
             </span>
-            <span style={{ fontSize: 13, color: '#f2b48a' }}>{formatDate(next.date!, 'long')}</span>
+            <span className="order">{formatDate(next.date!, 'long')}</span>
           </span>
         </div>
       )}
@@ -127,10 +119,10 @@ export function Glance() {
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {moment === null ? (
           <>
-            <button type="button" className="btn" style={{ minHeight: 52, fontSize: 16 }} onClick={() => setMoment('')}>
+            <button type="button" className="btn" style={{ minHeight: 52, fontSize: 15 }} onClick={() => setMoment('')}>
               Log a moment
             </button>
-            <span style={{ textAlign: 'center', fontSize: 13, color: 'var(--dust)' }}>Saves a quick journal line. Finish it later.</span>
+            <span style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)' }}>Saves a quick journal line. Finish it later.</span>
           </>
         ) : (
           <form

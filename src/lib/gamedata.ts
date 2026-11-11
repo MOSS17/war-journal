@@ -70,12 +70,12 @@ export const LIBRARY_CATEGORIES = [
 ];
 
 export const QUALITY_COLOR: Record<Quality, string> = {
-  poor: '#9d9d9d',
-  common: '#D8D2C6',
-  uncommon: '#7FBF68',
-  rare: '#5B9BE0',
-  epic: '#A77DE0',
-  legendary: '#E8913A',
+  poor: '#9D9D9D',
+  common: '#FFFFFF',
+  uncommon: '#1EFF00',
+  rare: '#0070DD',
+  epic: '#A335EE',
+  legendary: '#FF8000',
 };
 export const QUALITIES: Quality[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 

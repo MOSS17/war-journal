@@ -2,7 +2,33 @@ import { useId, type ReactNode } from 'react';
 
 export type SkylineVariant = 'home' | 'characters' | 'instances' | 'plans' | 'journal' | 'library';
 
-/** Layered SVG war camp at dusk, fading into the page. Decorative only. */
+const DARK = '#0d0907';
+const BANNER = '#7d130c';
+
+/** A camp banner on a pole: crimson cloth with gold tusks. */
+function Banner({ x, top, bottom, scale = 1 }: { x: number; top: number; bottom: number; scale?: number }) {
+  const w = 61 * scale;
+  const h = 78 * scale;
+  const y = top + 8 * scale;
+  return (
+    <>
+      <rect x={x} y={top} width={6 * scale} height={bottom - top} fill={DARK} />
+      <path
+        d={`M${x + 6 * scale} ${y} H${x + 6 * scale + w} V${y + h} L${x + 6 * scale + w * 0.74} ${y + h * 0.85} L${x + 6 * scale + w * 0.54} ${y + h * 1.08} L${x + 6 * scale + w * 0.31} ${y + h * 0.87} L${x + 6 * scale} ${y + h * 1.05}Z`}
+        fill={BANNER}
+      />
+      <path
+        d={`M${x + 23 * scale} ${y + 20 * scale} Q${x + 15 * scale} ${y + 40 * scale} ${x + 27 * scale} ${y + 58 * scale} M${x + 49 * scale} ${y + 20 * scale} Q${x + 57 * scale} ${y + 40 * scale} ${x + 45 * scale} ${y + 58 * scale}`}
+        stroke="#d9a441"
+        strokeWidth={5 * scale}
+        fill="none"
+        strokeLinecap="round"
+      />
+    </>
+  );
+}
+
+/** Inline SVG camp skyline at dusk: palisade, huts, banners, campfire glow. Decorative only. */
 export function Skyline({ variant }: { variant: SkylineVariant }) {
   const raw = useId().replace(/[^a-zA-Z0-9]/g, '');
   const id = (n: string) => `${n}${raw}`;
@@ -10,162 +36,118 @@ export function Skyline({ variant }: { variant: SkylineVariant }) {
 
   if (variant === 'home') {
     return (
-      <svg className="sky" viewBox="0 0 1440 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <svg className="sky" viewBox="0 0 1440 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
         <defs>
           <linearGradient id={id('sky')} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#120c0b" />
-            <stop offset=".45" stopColor="#2c1310" />
-            <stop offset=".78" stopColor="#6b2617" />
-            <stop offset="1" stopColor="#a8421e" />
+            <stop offset="0" stopColor="#150605" />
+            <stop offset=".5" stopColor="#4e130b" />
+            <stop offset=".82" stopColor="#b4461a" />
+            <stop offset="1" stopColor="#e98a2c" />
           </linearGradient>
-          <radialGradient id={id('fire')} cx=".5" cy="1" r=".55">
-            <stop offset="0" stopColor="#ff9a4a" stopOpacity=".55" />
-            <stop offset="1" stopColor="#ff9a4a" stopOpacity="0" />
+          <radialGradient id={id('glow')} cx=".5" cy="1" r=".5">
+            <stop offset="0" stopColor="#ffbe55" stopOpacity=".7" />
+            <stop offset="1" stopColor="#ffbe55" stopOpacity="0" />
           </radialGradient>
-          <linearGradient id={id('fade')} x1="0" y1="0" x2="0" y2="1">
-            <stop offset=".55" stopColor="#0f0c0b" stopOpacity="0" />
-            <stop offset="1" stopColor="#0f0c0b" />
-          </linearGradient>
-          <filter id={id('grain')}>
-            <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch" />
-            <feColorMatrix values="0 0 0 0 1  0 0 0 0 .85  0 0 0 0 .7  0 0 0 .06 0" />
-          </filter>
-          <pattern id={id('spk')} width="22" height="60" patternUnits="userSpaceOnUse">
-            <path d="M2 60 V13 L11 0 L20 13 V60Z" fill="#160d0b" />
+          <pattern id={id('spk')} width="26" height="70" patternUnits="userSpaceOnUse">
+            <path d="M3 70 V16 L13 0 L23 16 V70Z" fill="#1c0c07" />
           </pattern>
         </defs>
-        <rect width="1440" height="400" fill={url('sky')} />
-        <path d="M0 270 L120 210 L210 245 L340 180 L470 240 L600 205 L720 250 L860 190 L1000 240 L1130 200 L1260 245 L1440 205 V400 H0Z" fill="#3a1812" opacity=".75" />
-        <path d="M0 300 Q200 262 380 288 T760 280 T1140 286 T1440 270 V400 H0Z" fill="#24110d" />
-        <ellipse cx="720" cy="400" rx="560" ry="150" fill={url('fire')} />
-        <rect x="0" y="300" width="1440" height="60" fill={url('spk')} />
-        <g fill="#0f0a09">
-          <path d="M150 400 L230 300 L310 400Z" />
-          <path d="M222 306 L210 270 M238 306 L252 270" stroke="#0f0a09" strokeWidth="5" />
-          <path d="M380 400 V352 Q380 300 460 294 Q540 300 540 352 V400Z" />
-          <path d="M402 334 Q384 300 396 274 Q406 304 420 326Z M518 334 Q536 300 524 274 Q514 304 500 326Z" />
-          <rect x="640" y="210" width="5" height="190" />
-          <rect x="800" y="210" width="5" height="190" />
-          <path d="M1000 400 V355 Q1000 310 1070 304 Q1140 310 1140 355 V400Z" />
-          <path d="M1020 338 Q1004 306 1016 284 Q1024 310 1036 330Z M1120 338 Q1136 306 1124 284 Q1116 310 1104 330Z" />
-          <path d="M1250 400 V250 H1238 L1280 214 L1322 250 H1310 V400Z" />
+        <rect width="1440" height="250" fill={url('sky')} />
+        <circle cx="1120" cy="70" r="26" fill="#f3c27a" opacity=".35" />
+        <path d="M0 205 Q160 160 340 186 T700 170 T1060 182 T1440 162 V250 H0Z" fill="#2b0d07" />
+        <rect x="0" y="180" width="1440" height="70" fill={url('spk')} />
+        <ellipse className="flicker" cx="720" cy="250" rx="420" ry="110" fill={url('glow')} />
+        <path d="M90 250 L170 150 L250 250Z M162 158 L150 122 M178 158 L192 122" fill={DARK} stroke={DARK} strokeWidth="5" />
+        <path d="M300 250 V212 Q300 168 380 162 Q460 168 460 212 V250Z" fill={DARK} />
+        <path d="M322 196 Q302 162 316 136 Q326 166 340 188Z M438 196 Q458 162 444 136 Q434 166 420 188Z M372 166 Q380 128 388 166Z" fill={DARK} />
+        <Banner x={545} top={70} bottom={250} />
+        <path d="M640 250 Q690 214 720 236 Q750 212 800 250Z" fill={DARK} />
+        <g className="flicker">
+          <path d="M706 236 Q712 196 722 214 Q726 186 736 236Z" fill="#ffb347" />
+          <path d="M714 236 Q718 214 724 224 Q728 208 732 236Z" fill="#fff0a8" />
         </g>
-        <path d="M645 218 H700 V290 L686 279 L672 296 L658 281 L645 292Z" fill="#7e1f18" />
-        <path d="M805 218 H860 V290 L846 279 L832 296 L818 281 L805 292Z" fill="#7e1f18" />
-        <path d="M662 236 Q656 254 666 270 M684 236 Q690 254 680 270 M822 236 Q816 254 826 270 M844 236 Q850 254 840 270" stroke="#c9a45c" strokeWidth="3" fill="none" strokeLinecap="round" opacity=".8" />
-        <g fill="#ffb066">
-          <circle cx="700" cy="330" r="2" opacity=".9" />
-          <circle cx="742" cy="300" r="1.6" opacity=".7" />
-          <circle cx="716" cy="262" r="1.3" opacity=".55" />
-          <circle cx="760" cy="236" r="1.1" opacity=".4" />
-          <circle cx="688" cy="210" r="1" opacity=".3" />
-          <circle cx="735" cy="180" r="1.2" opacity=".25" />
-          <circle cx="772" cy="276" r="1.4" opacity=".6" />
-          <circle cx="676" cy="288" r="1.2" opacity=".5" />
-        </g>
-        <rect width="1440" height="400" filter={url('grain')} />
-        <rect width="1440" height="400" fill={url('fade')} />
+        <Banner x={890} top={70} bottom={250} />
+        <path d="M1000 250 V214 Q1000 176 1070 170 Q1140 176 1140 214 V250Z M1020 200 Q1004 170 1016 148 Q1024 174 1036 194Z M1120 200 Q1136 170 1124 148 Q1116 174 1104 194Z" fill={DARK} />
+        <path d="M1230 250 V122 H1216 L1262 84 L1308 122 H1294 V250Z M1252 84 L1262 50 L1272 84Z" fill={DARK} />
+        <path d="M1340 250 L1400 170 L1460 250Z" fill={DARK} />
       </svg>
     );
   }
 
-  const ridge: Record<Exclude<SkylineVariant, 'home'>, string> = {
-    characters: 'M0 170 L140 130 L260 156 L400 118 L540 160 L700 128 L860 162 L1020 126 L1180 158 L1320 132 L1440 150 V240 H0Z',
-    plans: 'M0 170 L140 130 L260 156 L400 118 L540 160 L700 128 L860 162 L1020 126 L1180 158 L1320 132 L1440 150 V240 H0Z',
-    instances: 'M0 200 L120 150 L220 176 L330 110 L420 160 L560 90 L660 150 L800 120 L940 168 L1080 100 L1200 150 L1320 124 L1440 160 V240 H0Z',
-    library: 'M0 176 L180 140 L320 162 L470 124 L620 158 L780 132 L940 164 L1100 130 L1260 160 L1440 140 V240 H0Z',
-    journal: 'M0 190 Q240 150 480 176 T960 168 T1440 156 V240 H0Z',
-  };
-
-  const props: Record<Exclude<SkylineVariant, 'home'>, ReactNode> = {
+  const spikes = <rect x="0" y="90" width="1440" height="60" fill={url('spk')} />;
+  const scenes: Record<Exclude<SkylineVariant, 'home'>, ReactNode> = {
     characters: (
       <>
-        <g fill="#0f0a09">
-          <path d="M1060 240 L1120 170 L1180 240Z" />
-          <path d="M200 240 V206 Q200 170 260 166 Q320 170 320 206 V240Z" />
-          <rect x="1330" y="110" width="4" height="130" />
-        </g>
-        <path d="M1334 116 H1374 V166 L1364 158 L1354 170 L1344 160 L1334 168Z" fill="#7e1f18" />
+        {spikes}
+        <path d="M60 150 L130 70 L200 150Z M1180 150 V120 Q1180 86 1240 82 Q1300 86 1300 120 V150Z M1196 108 Q1182 84 1192 66 Q1200 88 1210 104Z M1284 108 Q1298 84 1288 66 Q1280 88 1270 104Z" fill={DARK} />
+        <Banner x={1360} top={30} bottom={150} scale={0.78} />
       </>
     ),
     plans: (
       <>
-        <g fill="#0f0a09">
-          <path d="M90 240 L150 170 L210 240Z" />
-          <path d="M1180 240 V206 Q1180 170 1240 166 Q1300 170 1300 206 V240Z" />
-          <rect x="1360" y="110" width="4" height="130" />
-        </g>
-        <path d="M1364 116 H1404 V166 L1394 158 L1384 170 L1374 160 L1364 168Z" fill="#7e1f18" />
+        {spikes}
+        <path d="M60 150 L130 70 L200 150Z M1180 150 V120 Q1180 86 1240 82 Q1300 86 1300 120 V150Z M1196 108 Q1182 84 1192 66 Q1200 88 1210 104Z M1284 108 Q1298 84 1288 66 Q1280 88 1270 104Z" fill={DARK} />
+        <Banner x={300} top={30} bottom={150} scale={0.78} />
+        <Banner x={1360} top={30} bottom={150} scale={0.78} />
       </>
     ),
     instances: (
       <>
-        <path d="M0 220 Q260 186 520 206 T1040 200 T1440 190 V240 H0Z" fill="#1c0f0c" />
-        <g fill="#0f0a09">
-          <path d="M540 240 V150 L560 126 L580 150 V240Z" />
-          <path d="M520 240 H600 V196 H520Z" />
-          <path d="M1220 240 V170 Q1220 150 1250 146 Q1280 150 1280 170 V240Z" />
+        <path d="M0 120 L120 80 L220 104 L330 50 L420 96 L560 40 L660 92 L800 70 L940 104 L1080 50 L1200 92 L1320 70 L1440 100 V150 H0Z" fill="#2b0d07" />
+        <g fill={DARK}>
+          <path d="M540 150 V80 L560 56 L580 80 V150Z" />
+          <path d="M520 150 H600 V120 H520Z" />
+          <path d="M1220 150 V112 Q1220 92 1250 88 Q1280 92 1280 112 V150Z" />
         </g>
       </>
     ),
     library: (
-      <g fill="#0f0a09">
-        <path d="M980 240 V150 H968 L1006 118 L1044 150 H1032 V240Z" />
-        <path d="M140 240 L200 172 L260 240Z" />
-      </g>
+      <>
+        <path d="M0 116 L180 90 L320 108 L470 80 L620 106 L780 86 L940 110 L1100 84 L1260 106 L1440 92 V150 H0Z" fill="#2b0d07" />
+        {spikes}
+        <g fill={DARK}>
+          <path d="M980 150 V80 H966 L1006 46 L1046 80 H1032 V150Z" />
+          <path d="M140 150 L200 82 L260 150Z" />
+        </g>
+      </>
     ),
     journal: (
       <>
-        <ellipse cx="430" cy="240" rx="420" ry="110" fill={url('fire')} />
-        <g fill="#0f0a09">
-          <path d="M300 240 L370 160 L440 240Z" />
-          <path d="M362 166 L352 136 M378 166 L390 136" stroke="#0f0a09" strokeWidth="4" />
-          <path d="M1100 240 V206 Q1100 172 1160 168 Q1220 172 1220 206 V240Z" />
-          <path d="M1116 194 Q1102 168 1112 150 Q1120 172 1130 190Z M1204 194 Q1218 168 1208 150 Q1200 172 1190 190Z" />
+        <path d="M0 120 Q240 92 480 112 T960 104 T1440 96 V150 H0Z" fill="#2b0d07" />
+        <ellipse className="flicker" cx="430" cy="150" rx="320" ry="80" fill={url('glow')} />
+        <g fill={DARK}>
+          <path d="M300 150 L370 70 L440 150Z" />
+          <path d="M362 76 L352 46 M378 76 L390 46" stroke={DARK} strokeWidth="4" />
+          <path d="M1100 150 V120 Q1100 86 1160 82 Q1220 86 1220 120 V150Z" />
+          <path d="M1116 108 Q1102 82 1112 64 Q1120 86 1130 104Z M1204 108 Q1218 82 1208 64 Q1200 86 1190 104Z" />
+          <path d="M520 150 Q560 128 584 142 Q608 126 648 150Z" />
         </g>
-        <path d="M418 240 Q424 210 432 222 Q436 200 444 240Z" fill="#ffb347" />
-        <g fill="#ffb066">
-          <circle cx="436" cy="196" r="1.6" opacity=".7" />
-          <circle cx="452" cy="170" r="1.2" opacity=".5" />
-          <circle cx="424" cy="150" r="1" opacity=".35" />
+        <g className="flicker">
+          <path d="M572 142 Q577 112 585 126 Q589 104 597 142Z" fill="#ffb347" />
+          <path d="M578 142 Q581 126 586 132 Q589 120 592 142Z" fill="#fff0a8" />
         </g>
       </>
     ),
   };
 
-  const hasSpikes = variant === 'characters' || variant === 'plans' || variant === 'library';
-  const bottom = variant === 'journal' ? '#8a3519' : '#7a2d18';
-
   return (
-    <svg className="sky" viewBox="0 0 1440 240" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <svg className="sky" viewBox="0 0 1440 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
       <defs>
         <linearGradient id={id('sky')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#120c0b" />
-          <stop offset=".6" stopColor="#2c1310" />
-          <stop offset="1" stopColor={bottom} />
+          <stop offset="0" stopColor="#1a0806" />
+          <stop offset=".6" stopColor="#6a1a0d" />
+          <stop offset="1" stopColor="#d27428" />
         </linearGradient>
-        <radialGradient id={id('fire')} cx=".3" cy="1" r=".4">
-          <stop offset="0" stopColor="#ff9a4a" stopOpacity=".5" />
-          <stop offset="1" stopColor="#ff9a4a" stopOpacity="0" />
+        <radialGradient id={id('glow')} cx=".5" cy="1" r=".5">
+          <stop offset="0" stopColor="#ffbe55" stopOpacity=".6" />
+          <stop offset="1" stopColor="#ffbe55" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id={id('fade')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset=".45" stopColor="#0f0c0b" stopOpacity="0" />
-          <stop offset="1" stopColor="#0f0c0b" />
-        </linearGradient>
-        <filter id={id('grain')}>
-          <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch" />
-          <feColorMatrix values="0 0 0 0 1  0 0 0 0 .85  0 0 0 0 .7  0 0 0 .06 0" />
-        </filter>
-        <pattern id={id('spk')} width="22" height="50" patternUnits="userSpaceOnUse">
-          <path d="M2 50 V12 L11 0 L20 12 V50Z" fill="#160d0b" />
+        <pattern id={id('spk')} width="26" height="60" patternUnits="userSpaceOnUse">
+          <path d="M3 60 V14 L13 0 L23 14 V60Z" fill="#1c0c07" />
         </pattern>
       </defs>
-      <rect width="1440" height="240" fill={url('sky')} />
-      <path d={ridge[variant]} fill={variant === 'journal' ? '#2a120d' : '#3a1812'} opacity={variant === 'journal' ? 1 : 0.72} />
-      {hasSpikes && <rect x="0" y={variant === 'library' ? 186 : 180} width="1440" height="50" fill={url('spk')} />}
-      {props[variant]}
-      <rect width="1440" height="240" filter={url('grain')} />
-      <rect width="1440" height="240" fill={url('fade')} />
+      <rect width="1440" height="150" fill={url('sky')} />
+      {scenes[variant]}
     </svg>
   );
 }

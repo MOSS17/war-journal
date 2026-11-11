@@ -59,10 +59,10 @@ export function ConfirmModal({
 // ---------- Quick add ----------
 
 const QUICK: { key: string; label: string; help: string; icon: ReactNode; spec: ModalSpec }[] = [
-  { key: 'J', label: 'Journal entry', help: 'Write about tonight', icon: <Icon.journal color="#f2a46e" />, spec: { kind: 'journal' } },
-  { key: 'P', label: 'War plan', help: 'Something to work toward', icon: <Icon.flag color="#f2a46e" />, spec: { kind: 'plan' } },
-  { key: 'U', label: 'Update progress', help: 'Level, gold, professions', icon: <Icon.up color="#f2a46e" />, spec: { kind: 'progress' } },
-  { key: 'L', label: 'Save to Library', help: 'A link or a note', icon: <Icon.link color="#f2a46e" />, spec: { kind: 'library' } },
+  { key: 'J', label: 'Journal entry', help: 'Write about tonight', icon: <Icon.journal />, spec: { kind: 'journal' } },
+  { key: 'P', label: 'War plan', help: 'Something to work toward', icon: <Icon.flag />, spec: { kind: 'plan' } },
+  { key: 'U', label: 'Update progress', help: 'Level, gold, professions', icon: <Icon.up />, spec: { kind: 'progress' } },
+  { key: 'L', label: 'Save to Library', help: 'A link or a note', icon: <Icon.link />, spec: { kind: 'library' } },
 ];
 
 export function QuickAdd({ onClose }: ModalProps) {
@@ -75,6 +75,9 @@ export function QuickAdd({ onClose }: ModalProps) {
   return (
     <Modal title="Quick add" onClose={onClose} size="menu">
       <div role="menu" aria-label="Quick add" style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span className="disp" aria-hidden="true" style={{ padding: '4px 10px 8px', color: 'var(--gold)', fontSize: 15 }}>
+          Quick add
+        </span>
         {QUICK.map((q, i) => (
           <button key={q.key} ref={i === 0 ? first : undefined} type="button" role="menuitem" className="qa" onClick={() => open(q.spec)}>
             <span className="ico">{q.icon}</span>
@@ -87,12 +90,12 @@ export function QuickAdd({ onClose }: ModalProps) {
             <span className="kbd">{q.key}</span>
           </button>
         ))}
-        <div style={{ height: 1, margin: '6px 10px', background: 'rgba(233,200,150,.1)' }} />
+        <div style={{ height: 1, margin: '4px 10px', background: 'rgba(143,143,150,.3)' }} />
         <button type="button" role="menuitem" className="qa" onClick={() => open({ kind: 'character' })}>
-          <span className="ico" style={{ background: 'rgba(233,200,150,.06)', boxShadow: 'inset 0 0 0 1px rgba(233,200,150,.16)' }}>
-            <Icon.person color="#d9cdb8" />
+          <span className="ico">
+            <Icon.person color="#40c040" />
           </span>
-          <span className="grow" style={{ display: 'flex', flexDirection: 'column' }}>
+          <span className="grow" style={{ display: 'flex', flexDirection: 'column', color: 'var(--done)' }}>
             New character
             <span className="help" style={{ fontWeight: 500 }}>
               {main ? 'Rolled an alt?' : 'Start here'}
@@ -100,7 +103,7 @@ export function QuickAdd({ onClose }: ModalProps) {
           </span>
         </button>
       </div>
-      <div className="help" style={{ padding: '10px 16px', borderTop: '1px solid rgba(233,200,150,.08)', display: 'flex', justifyContent: 'space-between' }}>
+      <div className="help" style={{ padding: '10px 20px 14px', borderTop: '1px solid rgba(143,143,150,.3)', display: 'flex', justifyContent: 'space-between' }}>
         <span>
           Press <span className="kbd">N</span> anywhere
         </span>
@@ -541,7 +544,7 @@ export function DataModal({ onClose }: ModalProps) {
             {error}
           </span>
         )}
-        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ borderTop: '1px solid var(--sunk-edge)', paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <span className="lab">Start over</span>
           <span className="help">Deletes every character, plan, entry and link, then restores the instance list and dates.</span>
           <button

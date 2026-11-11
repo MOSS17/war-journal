@@ -219,7 +219,7 @@ export function JournalForm({
             value={title}
             autoFocus
             placeholder="e.g. Ganked at the Crossroads"
-            style={{ fontFamily: 'var(--disp)', fontWeight: 600, fontSize: 18 }}
+            style={{ fontFamily: 'var(--f-title)', fontSize: 18 }}
             onChange={(e) => touch(setTitle)(e.target.value)}
           />
         </Field>

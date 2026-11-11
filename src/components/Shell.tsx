@@ -14,8 +14,7 @@ const NAV = [
   { to: '/library', label: 'Library' },
 ];
 
-function TopBar() {
-  const { open } = useOverlay();
+function NavBar() {
   const [menu, setMenu] = useState(false);
   const loc = useLocation();
   useEffect(() => {
@@ -23,44 +22,40 @@ function TopBar() {
   }, [loc.pathname]);
 
   return (
-    <header className="topbar">
-      <Link to="/" className="brand">
-        {/* Logo slot: an official asset may only go here unaltered, on a non-commercial site. */}
-        <span className="logo-slot" data-logo-slot>
-          <Mark size={32} />
-        </span>
-        <span className="disp" style={{ fontSize: 19 }}>
-          War Journal
-        </span>
-      </Link>
-      <nav className={`nav${menu ? ' open' : ''}`} aria-label="Main" id="main-nav">
-        {NAV.map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.end}>
-            {n.label}
-          </NavLink>
-        ))}
-      </nav>
-      <div className="topbar-actions">
-        <button type="button" className="btn" style={{ minHeight: 40 }} onClick={() => open({ kind: 'quick' })} aria-keyshortcuts="N">
-          +<span className="quick-label"> Quick add</span>
-        </button>
-        <button
-          type="button"
-          className="iconbtn menu-toggle"
-          aria-expanded={menu}
-          aria-controls="main-nav"
-          aria-label="Menu"
-          onClick={() => setMenu((m) => !m)}
-          style={{ width: 44, height: 40 }}
-        >
-          <Icon.menu />
-        </button>
+    <div className="navbar plank">
+      <div className="navbar-inner">
+        <Link to="/" className="brand">
+          {/* Logo slot: an official asset may only go here unaltered, on a non-commercial site. */}
+          <span className="logo-slot" data-logo-slot>
+            <Mark size={30} />
+          </span>
+          <span>War Journal</span>
+        </Link>
+        <nav className={`nav${menu ? ' open' : ''}`} aria-label="Main" id="main-nav">
+          {NAV.map((n) => (
+            <NavLink key={n.to} to={n.to} end={n.end}>
+              {n.label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="navbar-actions">
+          <button
+            type="button"
+            className="iconbtn menu-toggle"
+            aria-expanded={menu}
+            aria-controls="main-nav"
+            aria-label="Menu"
+            onClick={() => setMenu((m) => !m)}
+          >
+            <Icon.menu />
+          </button>
+        </div>
       </div>
-    </header>
+    </div>
   );
 }
 
-/** A section page: hero with skyline, top bar and title, then content. */
+/** A section page: camp skyline hero with the title, the wood plank nav, then content. */
 export function Page({
   variant,
   eyebrow,
@@ -77,18 +72,23 @@ export function Page({
   hero?: ReactNode;
   children: ReactNode;
 }) {
+  const { open } = useOverlay();
   useEffect(() => {
     document.title = title ? `${title} · War Journal` : 'War Journal';
   }, [title]);
   return (
     <>
-      <div className={`hero${variant === 'home' ? ' home' : ''}`}>
+      <header className={`hero${variant === 'home' ? ' home' : ''}`}>
         <Skyline variant={variant} />
+        <div className="hero-quick">
+          <button type="button" className="btn" onClick={() => open({ kind: 'quick' })} aria-keyshortcuts="N">
+            +<span className="quick-label"> Quick add</span>
+          </button>
+        </div>
         <div className="hero-inner">
-          <TopBar />
           {hero ?? (
             <div className="pagehead">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {eyebrow && <span className="eyebrow">{eyebrow}</span>}
                 <h1>{title}</h1>
               </div>
@@ -96,7 +96,8 @@ export function Page({
             </div>
           )}
         </div>
-      </div>
+      </header>
+      <NavBar />
       <main className="page" id="main">
         {children}
       </main>
@@ -108,6 +109,7 @@ export function Footer() {
   const { open } = useOverlay();
   return (
     <footer className="footer">
+      <div className="footer-inner">
       <p>
         World of Warcraft and Warcraft are trademarks or registered trademarks of Blizzard Entertainment, Inc. This site
         is not affiliated with or endorsed by Blizzard.
@@ -126,6 +128,7 @@ export function Footer() {
         <button type="button" className="linkbtn" onClick={() => open({ kind: 'data' })}>
           Backup &amp; data
         </button>
+      </div>
       </div>
     </footer>
   );

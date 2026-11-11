@@ -2,7 +2,7 @@
 
 A personal companion for WoW Forever: track every character's progress, set war plans for dungeons and raids, keep a journal of the journey, and save the guides you keep looking up.
 
-- Design canvas: https://claude.ai/artifact/BsNsbo1WQz6CYCtT7SNtVG (Ember & Iron)
+- Design canvas: https://claude.ai/artifact/BsNsbo1WQz6CYCtT7SNtVG ("Classic UI (full set)" page). Tokens, components and rules: [DESIGN.md](DESIGN.md)
 - System design and handoff notes: https://claude.ai/artifact/Wa8E24nQf9WXFE5JyivA5K
 
 ## Run it
@@ -17,6 +17,7 @@ npm run build      # typecheck + production build into dist/
 ## How it works
 
 - **Static app, no backend.** Vite, React 19, React Router 8 (declarative mode), TypeScript 7.
+- **Look:** Classic UI, the classic game interface style (leather frames, gold plaques, red buttons, tooltip panels, parchment). All styling is in `src/styles/app.css`; see [DESIGN.md](DESIGN.md).
 - **Storage:** IndexedDB through Dexie (`src/db/db.ts`). All data stays in the browser. Use **Backup & data** in the footer to export everything (screenshots included) as one JSON file, or to import it again.
 - **Seed data:** `src/data/instances.json` (29 dungeons, 3 raids) and `src/data/events.json` (countdown dates). They're loaded on first run. To ship new content, edit the file and bump `SEED_VERSION` in `src/db/db.ts`: new rows are added, and existing seeded rows get their reference data (territory, Horde access, quests) refreshed, while your notes, bosses, wings, links and renames are kept.
 - **Game logic** (`src/lib/logic.ts`, tested): difficulty colours (trivial → deadly), "fits my level", money, and plan progress.
@@ -53,4 +54,4 @@ Every game-describing record has `source` (manual / api / addon) and `updatedAt`
 
 ## Legal
 
-Horde-inspired, original art only: the tusk-shield mark and skyline SVGs are original. The top bar keeps a logo slot (`data-logo-slot`) where an official asset may go unaltered on a non-commercial site, per Blizzard's guidelines. The footer carries the trademark credit.
+Horde-inspired, original art only: the tusk-shield mark and skyline SVGs are original. The plank nav keeps a logo slot (`data-logo-slot`) where an official asset may go unaltered on a non-commercial site, per Blizzard's guidelines. The footer carries the trademark credit.

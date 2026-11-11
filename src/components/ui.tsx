@@ -2,16 +2,32 @@ import { useId, useRef, useState, type ReactNode } from 'react';
 import type { Character, RunStatus } from '../lib/types';
 import { CLASS_COLOR } from '../lib/gamedata';
 import { DIFFICULTY_COLOR, RUN_LABEL, fromCoins, toCoins, type Difficulty } from '../lib/logic';
-import { ClassGlyph, Diamond, Icon } from './icons';
+import { ClassGlyph, Icon } from './icons';
 
-export function Pennant({ small = false }: { small?: boolean }) {
+/** Gold rivets in the four corners of a frame. Decorative. */
+export function Rivets({ top = true, bottom = true }: { top?: boolean; bottom?: boolean }) {
   return (
-    <span className="pennant" style={small ? undefined : { width: 26, height: 34 }}>
-      <Diamond size={small ? 10 : 12} />
-    </span>
+    <>
+      {top && (
+        <>
+          <span className="rivet tl" aria-hidden="true" />
+          <span className="rivet tr" aria-hidden="true" />
+        </>
+      )}
+      {bottom && (
+        <>
+          <span className="rivet bl" aria-hidden="true" />
+          <span className="rivet br" aria-hidden="true" />
+        </>
+      )}
+    </>
   );
 }
 
+/**
+ * A frame's title: a crimson plaque centred on the frame's top edge.
+ * `right` sits in the frame's top-right corner (links, counts).
+ */
 export function SectionHead({
   title,
   as: As = 'h2',
@@ -24,13 +40,42 @@ export function SectionHead({
   id?: string;
 }) {
   return (
-    <div className="sect">
-      <div className="sect-title">
-        <Pennant small />
-        <As id={id}>{title}</As>
-      </div>
-      {right}
-    </div>
+    <>
+      <As id={id} className="plaque">
+        {title}
+      </As>
+      {right && <div className="sect right-only">{right}</div>}
+    </>
+  );
+}
+
+/** A leather frame with rivets and a title plaque. */
+export function Frame({
+  title,
+  titleId,
+  as: As = 'section',
+  right,
+  className = '',
+  style,
+  rivets = true,
+  children,
+  ...rest
+}: {
+  title: ReactNode;
+  titleId?: string;
+  as?: 'section' | 'aside' | 'article' | 'div';
+  right?: ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  rivets?: boolean;
+  children: ReactNode;
+} & Omit<React.HTMLAttributes<HTMLElement>, 'title' | 'style' | 'className' | 'children'>) {
+  return (
+    <As className={`card card-pad ${className}`} style={style} aria-labelledby={titleId} {...rest}>
+      {rivets && <Rivets />}
+      <SectionHead id={titleId} title={title} right={right} />
+      {children}
+    </As>
   );
 }
 
@@ -39,7 +84,7 @@ export function DiffDot({ d, glow = true, size = 8 }: { d: Difficulty; glow?: bo
   return (
     <span
       className="dot"
-      style={{ width: size, height: size, background: c, boxShadow: glow && d !== 'trivial' ? `0 0 10px ${c}` : undefined }}
+      style={{ width: size, height: size, background: c, boxShadow: glow && d !== 'trivial' ? `0 0 8px ${c}` : undefined }}
     />
   );
 }
@@ -54,23 +99,30 @@ export function StatusPill({ status, locked = false, label }: { status: RunStatu
   return <span className={`pill ${cls}`}>{label ?? RUN_LABEL[status]}</span>;
 }
 
+/**
+ * Bars: `xp` (purple, 20 ticks), `skill` (blue, value centred), `progress` (gold),
+ * `plain` (gold track, custom fill colour).
+ */
 export function Bar({
   pct,
-  kind = 'brass',
+  kind = 'progress',
   color,
   height,
   label,
+  value,
 }: {
   pct: number;
-  kind?: 'xp' | 'brass' | 'plain';
+  kind?: 'xp' | 'skill' | 'progress' | 'plain';
   color?: string;
   height?: number;
   label?: string;
+  /** Text centred on a skill bar, e.g. "142 / 300". */
+  value?: ReactNode;
 }) {
   const w = `${Math.round(Math.max(0, Math.min(1, pct)) * 100)}%`;
   return (
     <div
-      className="track"
+      className={`track${kind === 'xp' || kind === 'skill' ? ` ${kind}` : ''}`}
       style={height ? { height } : undefined}
       role="progressbar"
       aria-valuemin={0}
@@ -78,11 +130,17 @@ export function Bar({
       aria-valuenow={Math.round(pct * 100)}
       aria-label={label}
     >
-      <span className={kind === 'plain' ? undefined : kind} style={{ width: w, background: color }} />
+      <span style={{ width: w, background: color }} />
+      {value !== undefined && (
+        <span className="val tab" aria-hidden="true">
+          {value}
+        </span>
+      )}
     </div>
   );
 }
 
+/** Round portrait with a gold ring and a level badge on the lower left. */
 export function Avatar({
   c,
   size = 76,
@@ -94,38 +152,38 @@ export function Avatar({
   quiet?: boolean;
   showLevel?: boolean;
 }) {
-  const ring = Math.max(2, Math.round(size / 36));
   return (
-    <span
-      className={`avatar${quiet ? ' quiet' : ''}`}
-      style={{
-        width: size,
-        height: size,
-        boxShadow: `inset 0 0 0 ${ring}px ${CLASS_COLOR[c.class]}${quiet ? '' : ', 0 0 24px -6px rgba(224,118,58,.6)'}`,
-        background: quiet ? 'radial-gradient(circle at 50% 35%, #3a221a, #150e0c 72%)' : undefined,
-      }}
-    >
-      {size >= 40 && !quiet && <ClassGlyph cls={c.class} size={Math.round(size / 2)} />}
-      {showLevel && <span className="lvl tab">{c.level}</span>}
+    <span className={`avatar${quiet ? ' quiet' : ''}`} style={{ width: size, height: size }}>
+      <span className="face">{size >= 40 && <ClassGlyph cls={c.class} size={Math.round(size * 0.52)} />}</span>
+      {showLevel && (
+        <span className="lvl tab" style={{ fontSize: Math.max(12, Math.round(size * 0.16)) }}>
+          {c.level}
+        </span>
+      )}
     </span>
   );
 }
 
-export function Money({ copper, size = 26 }: { copper: number; size?: number }) {
+/** Gold, silver and copper with coin icons. */
+export function Money({ copper, size = 18 }: { copper: number; size?: number }) {
   const { g, s, c } = toCoins(copper);
-  const small = { fontSize: Math.round(size * 0.62) };
   return (
-    <span className="disp tab" style={{ fontSize: size, color: 'var(--bone-hi)' }}>
-      {g}
-      <span style={{ ...small, color: 'var(--brass)' }}>g</span> {s}
-      <span style={{ ...small, color: 'var(--ash)' }}>s</span>
-      {size >= 24 && (
-        <>
-          {' '}
-          {c}
-          <span style={{ ...small, color: '#b8692e' }}>c</span>
-        </>
-      )}
+    <span className="money tab" style={{ fontSize: size }}>
+      <span>
+        {g}
+        <i className="coin-dot g" aria-hidden="true" />
+        <span className="sr-only"> gold</span>
+      </span>
+      <span>
+        {s}
+        <i className="coin-dot s" aria-hidden="true" />
+        <span className="sr-only"> silver</span>
+      </span>
+      <span>
+        {c}
+        <i className="coin-dot c" aria-hidden="true" />
+        <span className="sr-only"> copper</span>
+      </span>
     </span>
   );
 }
@@ -232,7 +290,7 @@ export function Stepper({
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   return (
-    <div className={`step${small ? ' sm' : ''}`} style={invalid ? { borderColor: '#e0574a' } : undefined}>
+    <div className={`step${small ? ' sm' : ''}${invalid ? ' invalid' : ''}`}>
       <button type="button" aria-label={`Decrease ${label}`} onClick={() => onChange(clamp(value - 1, min, max))}>
         −
       </button>
@@ -298,10 +356,10 @@ export function CoinsInput({ copper, onChange, legend }: { copper: number; onCha
 export function XpRange({ value, onChange, id }: { value: number; onChange: (v: number) => void; id: string }) {
   return (
     <div className="range">
-      <div className="track">
-        <span className="xp" style={{ width: `${value}%`, boxShadow: 'none' }} />
+      <div className="track xp">
+        <span style={{ width: `${value}%` }} />
       </div>
-      <span className="thumb" style={{ left: `calc(${value}% - 11px)` }} />
+      <span className="thumb" style={{ left: `calc(${value}% - 10px)` }} />
       <input
         id={id}
         type="range"
@@ -401,7 +459,7 @@ export function Check({
       onClick={() => onChange?.(!checked)}
       disabled={disabled}
     >
-      <span className={`cb${checked ? ' on' : ''}`}>{checked && <Icon.check size={14} color="#0f0c0b" strokeWidth={3.2} />}</span>
+      <span className={`cb${checked ? ' on' : ''}`}>{checked && <Icon.check size={14} strokeWidth={3.4} />}</span>
       <span className="check-text grow" style={{ textDecoration: checked && !green ? 'line-through' : undefined }}>
         {children}
       </span>
@@ -410,19 +468,37 @@ export function Check({
   );
 }
 
+/**
+ * An empty state. `framed` makes it a page-level frame with the title on a plaque;
+ * otherwise it sits inside an existing frame.
+ */
 export function EmptyState({
   title,
   children,
   action,
   center = false,
+  framed = false,
+  style,
 }: {
   title: string;
   children?: ReactNode;
   action?: ReactNode;
   center?: boolean;
+  framed?: boolean;
+  style?: React.CSSProperties;
 }) {
+  if (framed) {
+    return (
+      <section className="card empty framed" style={style}>
+        <Rivets />
+        <h2 className="plaque">{title}</h2>
+        {children && <p>{children}</p>}
+        {action}
+      </section>
+    );
+  }
   return (
-    <div className={`empty${center ? ' center' : ''}`}>
+    <div className={`empty${center ? ' center' : ''}`} style={style}>
       <h3>{title}</h3>
       {children && <p>{children}</p>}
       {action}
@@ -482,7 +558,6 @@ export function DropZone({ onFiles, label = 'Add or drop images' }: { onFiles: (
         onFiles([...e.dataTransfer.files]);
       }}
     >
-      <Icon.plus size={22} color="#e0763a" />
       <span>{label}</span>
       <input
         ref={ref}

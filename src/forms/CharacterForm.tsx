@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Modal, type ModalProps } from '../components/Modal';
 import { Field, Stepper, SwitchRow } from '../components/ui';
-import { Icon } from '../components/icons';
+import { ClassGlyph, Icon } from '../components/icons';
 import { useOverlay } from '../components/overlay';
 import { db, getMeta } from '../db/db';
 import { addCharacter, deleteCharacter, setMain, setRetired, updateCharacter } from '../db/actions';
@@ -208,16 +208,15 @@ export function CharacterForm({ id, onClose }: ModalProps & { id?: string }) {
           <span className="lab" id="cf-race">
             Race
           </span>
-          <div role="radiogroup" aria-labelledby="cf-race" className="tiles" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))' }}>
+          <div role="radiogroup" aria-labelledby="cf-race" className="tiles" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))' }}>
             {RACES.map((r) => (
               <button key={r.name} type="button" role="radio" aria-checked={race === r.name} className="tile" onClick={() => pickRace(r.name)}>
+                <span className="ic" aria-hidden="true">
+                  <span className="slot-mono">{r.name[0]}</span>
+                </span>
                 <span style={{ display: 'flex', flexDirection: 'column' }}>
                   {r.name}
-                  {r.home && (
-                    <span className="help" style={{ fontWeight: 500 }}>
-                      {r.home}
-                    </span>
-                  )}
+                  {r.home && <span className="sub">{r.home}</span>}
                 </span>
               </button>
             ))}
@@ -229,7 +228,7 @@ export function CharacterForm({ id, onClose }: ModalProps & { id?: string }) {
           <span className="lab" id="cf-class">
             Class
           </span>
-          <div role="radiogroup" aria-labelledby="cf-class" className="tiles" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(max(130px, calc(25% - 8px)), 1fr))' }}>
+          <div role="radiogroup" aria-labelledby="cf-class" className="tiles" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(84px, 1fr))' }}>
             {CLASSES.map((c) => {
               const off = !allowed.includes(c);
               const sel = cls === c;
@@ -242,10 +241,11 @@ export function CharacterForm({ id, onClose }: ModalProps & { id?: string }) {
                   disabled={off}
                   className="tile"
                   onClick={() => setCls(c)}
-                  style={sel ? { background: `${CLASS_COLOR[c]}24`, boxShadow: `inset 0 0 0 1.5px ${CLASS_COLOR[c]}` } : undefined}
                 >
-                  <span className="dot" style={{ background: CLASS_COLOR[c] }} />
-                  {c}
+                  <span className="ic" aria-hidden="true">
+                    <ClassGlyph cls={c} size={30} />
+                  </span>
+                  <span style={{ color: off ? undefined : CLASS_COLOR[c] }}>{c}</span>
                 </button>
               );
             })}

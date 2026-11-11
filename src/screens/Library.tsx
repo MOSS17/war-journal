@@ -2,15 +2,13 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Page } from '../components/Shell';
-import { EmptyState, SectionHead } from '../components/ui';
+import { EmptyState, Rivets } from '../components/ui';
 import { Icon } from '../components/icons';
 import { useOverlay } from '../components/overlay';
 import { db } from '../db/db';
 import { useLibrary } from '../db/hooks';
 import { togglePin } from '../db/actions';
 import type { LibraryItem } from '../lib/types';
-
-const MONO_BG = ['#8e2a22', '#5a3a1c', '#2a4a6a', '#3a2a4a', '#2f4a2a', '#5a2a3a'];
 
 function host(url?: string) {
   if (!url) return '';
@@ -24,12 +22,6 @@ function host(url?: string) {
 function mono(title: string) {
   const words = title.replace(/[^\p{L}\p{N} ]/gu, ' ').split(/\s+/).filter(Boolean);
   return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? '?').slice(0, 1)).toUpperCase();
-}
-
-function monoBg(title: string) {
-  let h = 0;
-  for (const ch of title) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return MONO_BG[h % MONO_BG.length];
 }
 
 export function Library() {
@@ -90,7 +82,7 @@ export function Library() {
     >
       <div className="stack">
         <label htmlFor="lib-q" className="searchbox">
-          <Icon.search color="#c9a45c" />
+          <Icon.search color="#e9c76a" />
           <span className="sr-only">Search the Library</span>
           <input
             ref={searchRef}
@@ -122,8 +114,8 @@ export function Library() {
         )}
 
         {items.length === 0 ? (
-          <section className="card">
             <EmptyState
+              framed
               title="Stop re-googling"
               action={
                 <div className="row-gap">
@@ -139,16 +131,17 @@ export function Library() {
               Save the guides, maps and addon lists you keep going back to, plus short notes like trainer locations or safe flight
               paths. Pin the ones you use most.
             </EmptyState>
-          </section>
         ) : shown.length === 0 ? (
-          <section className="card">
-            <EmptyState title="Nothing found">No links or notes match “{q}”.</EmptyState>
-          </section>
+          <EmptyState framed title="Nothing found">
+            No links or notes match “{q}”.
+          </EmptyState>
         ) : (
           <>
             {pinned.length > 0 && (
-              <section aria-labelledby="lib-pinned" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <SectionHead id="lib-pinned" title="Pinned" />
+              <section aria-labelledby="lib-pinned" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <h2 id="lib-pinned" className="title" style={{ fontSize: 24 }}>
+                  Pinned
+                </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(270px, 100%), 1fr))', gap: 16 }}>
                   {pinned.map((l) => (
                     <Tile key={l.id} item={l} attached={attachName(l)} />
@@ -157,10 +150,16 @@ export function Library() {
               </section>
             )}
             {rest.length > 0 && (
-              <section className="card" aria-label="All items" style={{ padding: 8 }}>
-                {rest.map((it) => (
-                  <Row key={it.id} item={it} attached={attachName(it)} />
-                ))}
+              <section className="card" aria-label="All items" style={{ padding: '40px 18px 18px' }}>
+                <Rivets />
+                <h2 className="plaque" aria-hidden="true">
+                  Notes &amp; Links
+                </h2>
+                <div className="well" style={{ padding: '4px 0' }}>
+                  {rest.map((it) => (
+                    <Row key={it.id} item={it} attached={attachName(it)} />
+                  ))}
+                </div>
               </section>
             )}
           </>
@@ -183,7 +182,7 @@ function ItemActions({ item }: { item: LibraryItem }) {
           e.preventDefault();
           togglePin(item);
         }}
-        style={item.pinned ? { color: '#e0763a' } : undefined}
+        style={item.pinned ? { color: 'var(--gold)' } : undefined}
       >
         <Icon.pin size={16} />
       </button>
@@ -207,27 +206,31 @@ function Tile({ item, attached }: { item: LibraryItem; attached: string }) {
   const inner = (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingRight: 80 }}>
-        <span className="mono disp" style={{ background: item.kind === 'note' ? '#4a3a16' : monoBg(item.title), fontSize: mono(item.title).length > 1 ? 15 : 18 }} aria-hidden="true">
-          {item.kind === 'note' ? <Icon.note size={20} color="#e4c66a" /> : mono(item.title)}
+        <span className="mono" aria-hidden="true">
+          {item.kind === 'note' ? <Icon.note size={20} color="#e9c76a" /> : mono(item.title)}
         </span>
         <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <span style={{ fontWeight: 700, fontSize: 16 }}>{item.title}</span>
-          <span className="help ellipsis">{item.kind === 'link' ? host(item.url) : 'Note'}</span>
+          <span className="disp" style={{ fontSize: 16, color: '#fff' }}>
+            {item.title}
+          </span>
+          <span className="ellipsis" style={{ fontSize: 13, color: 'var(--faint)' }}>
+            {item.kind === 'link' ? host(item.url) : 'Note'}
+          </span>
         </span>
       </div>
       {item.body && (
-        <span style={{ fontSize: 14, color: 'var(--ash)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <span style={{ fontSize: 14, color: 'var(--gold)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {item.body}
         </span>
       )}
       <span className="row-gap" style={{ gap: 6 }}>
-        <span className="pill">{item.category}</span>
+        <span style={{ fontSize: 13, color: 'var(--done)' }}>{item.category}</span>
         {attached && <span className="pill main">{attached}</span>}
       </span>
     </>
   );
   return (
-    <div className="card" style={{ position: 'relative' }}>
+    <div className="tip" style={{ position: 'relative' }}>
       {item.kind === 'link' && item.url ? (
         <a href={item.url} target="_blank" rel="noreferrer" className="ltile">
           {inner}
@@ -237,7 +240,7 @@ function Tile({ item, attached }: { item: LibraryItem; attached: string }) {
           {inner}
         </button>
       )}
-      <span style={{ position: 'absolute', top: 14, right: 14 }}>
+      <span style={{ position: 'absolute', top: 6, right: 6 }}>
         <ItemActions item={item} />
       </span>
     </div>
@@ -249,28 +252,30 @@ function Row({ item, attached }: { item: LibraryItem; attached: string }) {
   const isNote = item.kind === 'note';
   const sub = isNote ? item.body : [host(item.url), item.body].filter(Boolean).join(' · ');
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', padding: 14, borderRadius: 10, borderBottom: '1px solid rgba(233,200,150,.06)' }}>
-      <span className="kindicon" style={{ background: isNote ? 'rgba(217,181,74,.12)' : 'rgba(91,155,224,.12)' }} aria-hidden="true">
-        {isNote ? <Icon.note size={18} color="#e4c66a" /> : <Icon.link size={18} color="#8fb8ea" />}
+    <div className="librow">
+      <span className="kindicon" style={{ borderColor: isNote ? '#c9a24a' : '#4a7ac0' }} aria-hidden="true">
+        {isNote ? <Icon.note size={18} color="#e9c76a" /> : <Icon.link size={18} color="#7fb2f0" />}
       </span>
       <span style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         {isNote || !item.url ? (
-          <button type="button" className="linkbtn" style={{ color: 'var(--bone)', fontSize: 16, textAlign: 'left' }} onClick={() => open({ kind: 'library', id: item.id })}>
+          <button type="button" className="linkbtn" style={{ color: 'var(--body)', fontSize: 15, textAlign: 'left', minHeight: 32 }} onClick={() => open({ kind: 'library', id: item.id })}>
             {item.title}
           </button>
         ) : (
-          <a href={item.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: 'var(--bone)', textDecoration: 'none' }}>
-            {item.title} <Icon.external size={13} color="var(--dust)" />
+          <a href={item.url} target="_blank" rel="noreferrer" className="disp" style={{ fontSize: 15, color: 'var(--body)', textDecoration: 'none' }}>
+            {item.title} <Icon.external size={13} color="var(--faint)" />
           </a>
         )}
         {sub && (
-          <span style={{ fontSize: 14, color: 'var(--dust)', whiteSpace: isNote ? 'pre-wrap' : undefined, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          <span style={{ fontSize: 14, color: 'var(--muted)', whiteSpace: isNote ? 'pre-wrap' : undefined, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {sub}
           </span>
         )}
       </span>
       {attached && <span className="pill main">{attached}</span>}
-      <span className="pill">{item.category}</span>
+      <span className="disp" style={{ fontSize: 13, color: 'var(--label)' }}>
+        {item.category}
+      </span>
       <ItemActions item={item} />
     </div>
   );

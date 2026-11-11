@@ -144,7 +144,6 @@ export function InstanceProgressForm({
       header={
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
           <span className="eyebrow">Instances · for {char.firstName}</span>
-          <h2 style={{ fontFamily: 'var(--disp)', fontWeight: 600, fontSize: 24, color: 'var(--bone-hi)' }}>{inst.name}</h2>
           <span className="help tab">
             {inst.kind === 'raid' ? 'Raid' : 'Dungeon'} · {inst.size} player · {levelRange(inst)} · {inst.zone}
           </span>
@@ -235,8 +234,8 @@ export function InstanceProgressForm({
           </Field>
         </div>
         {planPreviews.map(({ plan, prog }) => (
-          <div key={plan.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, background: 'rgba(224,118,58,.1)', fontSize: 14 }}>
-            <Icon.flag size={18} color="#f2a46e" />
+          <div key={plan.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 4, background: 'rgba(0,0,0,.35)', border: '1px solid var(--sunk-edge)', fontSize: 14 }}>
+            <Icon.flag size={18} color="#ffd100" />
             <span>
               {prog.done ? 'Completes' : 'Also updates'} your war plan <strong>{plan.title}</strong>
               {prog.done ? '.' : ` to ${prog.label}.`}
