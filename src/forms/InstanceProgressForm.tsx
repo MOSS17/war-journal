@@ -113,6 +113,7 @@ export function InstanceProgressForm({
     status,
     wingsCleared: wings,
     bossesKilled: bosses,
+    questsDone: ctx.progress.find((p) => p.id === progressId(char.id, inst.id))?.questsDone ?? [],
     timesRun,
     firstClearDate: firstClear || undefined,
     source: 'manual' as const,

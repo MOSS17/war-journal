@@ -18,7 +18,7 @@ npm run build      # typecheck + production build into dist/
 
 - **Static app, no backend.** Vite, React 19, React Router 8 (declarative mode), TypeScript 7.
 - **Storage:** IndexedDB through Dexie (`src/db/db.ts`). All data stays in the browser. Use **Backup & data** in the footer to export everything (screenshots included) as one JSON file, or to import it again.
-- **Seed data:** `src/data/instances.json` (29 dungeons, 3 raids) and `src/data/events.json` (countdown dates). They're loaded on first run and never overwrite your edits. To ship new content, add rows and bump `SEED_VERSION` in `src/db/db.ts`.
+- **Seed data:** `src/data/instances.json` (29 dungeons, 3 raids) and `src/data/events.json` (countdown dates). They're loaded on first run. To ship new content, edit the file and bump `SEED_VERSION` in `src/db/db.ts`: new rows are added, and existing seeded rows get their reference data (territory, Horde access, quests) refreshed, while your notes, bosses, wings, links and renames are kept.
 - **Game logic** (`src/lib/logic.ts`, tested): difficulty colours (trivial → deadly), "fits my level", money, and plan progress.
 - **Plan sync** (`src/db/actions.ts`): marking instance progress, levels, skills or gold completes matching war plans. Ticking a wing on a plan writes back to that instance's progress.
 
@@ -28,7 +28,7 @@ npm run build      # typecheck + production build into dist/
 | --- | --- |
 | `/` | War Board (home); first-run "Add your first character" when empty |
 | `/characters`, `/characters/:id` | Roster and character page |
-| `/instances?i=…` | Instance list, filters, detail panel |
+| `/instances?i=…` | Instance list split into Horde & contested / Alliance territory, filters (`ally=0` hides the Alliance side), detail panel with quests |
 | `/plans?p=…` | War Plans grouped by character |
 | `/journal` | Journal pages, drafts, character and tag filters |
 | `/library` | Links and notes, search, pins |
@@ -38,7 +38,7 @@ npm run build      # typecheck + production build into dist/
 
 ## Data model additions beyond the design doc
 
-- Instance: `wings[]`, `notes`. InstanceProgress: `wingsCleared[]`.
+- Instance: `wings[]`, `notes`, `territory` (horde / contested / alliance, from a Horde player's view), `hordeAccess` (how to get there), `quests[]` (giver, location, level, prerequisite, how to get it, faction, key/attunement). InstanceProgress: `wingsCleared[]`, `questsDone[]`.
 - Character: `playedMinutes`, `copper` (gold stored in copper). Profession: `kind`.
 - WarPlan: `objectives[]` (linked to wings or bosses, or free text), `tracked`, `notes`, `reward` + `rewardQuality`, recommended `level`. Difficulty is computed from level, not stored.
 - JournalEntry: `imageIds[]`, `draft`, `level`. Screenshots live in an `images` table.

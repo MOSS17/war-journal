@@ -288,6 +288,46 @@ p {
   background: rgba(233, 200, 150, 0.06);
   color: var(--dust);
 }
+.pill.ally {
+  background: rgba(91, 155, 224, 0.14);
+  color: #8fb8e8;
+}
+.pill.horde {
+  background: rgba(184, 50, 42, 0.2);
+  color: var(--bad);
+}
+
+/* ---------- Dungeon quests ---------- */
+
+.quest {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(233, 200, 150, 0.07);
+}
+.quest-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  color: var(--ash);
+}
+.quest .check {
+  padding: 4px 0;
+}
+.quest .check + .quest-body {
+  padding-left: 34px;
+}
+.quest-ally > summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ash);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
 .dot {
   width: 8px;
   height: 8px;

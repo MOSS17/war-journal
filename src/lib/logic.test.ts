@@ -104,7 +104,7 @@ describe('planProgress', () => {
     const p = planProgress(smPlan, {
       ...base,
       progress: [{ id: 'c1:scarlet-monastery', characterId: 'c1', instanceId: sm.id, status: 'run',
-        wingsCleared: ['Graveyard', 'Library'], bossesKilled: [], timesRun: 2, source: 'manual', updatedAt: '' }],
+        wingsCleared: ['Graveyard', 'Library'], bossesKilled: [], questsDone: [], timesRun: 2, source: 'manual', updatedAt: '' }],
     });
     expect(p.label).toBe('2 / 4 wings');
     expect(p.pct).toBe(0.5);
@@ -116,7 +116,7 @@ describe('planProgress', () => {
     const p = planProgress(smPlan, {
       ...base,
       progress: [{ id: 'x', characterId: 'c1', instanceId: sm.id, status: 'cleared',
-        wingsCleared: [], bossesKilled: [], timesRun: 4, source: 'manual', updatedAt: '' }],
+        wingsCleared: [], bossesKilled: [], questsDone: [], timesRun: 4, source: 'manual', updatedAt: '' }],
     });
     expect(p.done).toBe(true);
     expect(p.objectives.every((o) => o.done)).toBe(true);
@@ -151,6 +151,20 @@ describe('planProgress', () => {
       objectives: [{ id: 'o', text: 'Kill Onyxia', link: { boss: 'Onyxia' }, done: false }] });
     expect(planProgress(pl, base).done).toBe(false);
     expect(planProgress(pl, { ...base, progress: [{ id: 'x', characterId: 'c1', instanceId: ony.id, status: 'run',
-      wingsCleared: [], bossesKilled: ['Onyxia'], timesRun: 1, source: 'manual', updatedAt: '' }] }).done).toBe(true);
+      wingsCleared: [], bossesKilled: ['Onyxia'], questsDone: [], timesRun: 1, source: 'manual', updatedAt: '' }] }).done).toBe(true);
+  });
+});
+
+describe('seed data', () => {
+  it('gives every instance a territory and unique quest ids', () => {
+    for (const i of instances) {
+      expect(['horde', 'contested', 'alliance']).toContain(i.territory);
+      const ids = i.quests.map((q) => q.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const q of i.quests) {
+        expect(['horde', 'alliance', 'both']).toContain(q.faction);
+        expect(q.name && q.giver && q.howTo).toBeTruthy();
+      }
+    }
   });
 });

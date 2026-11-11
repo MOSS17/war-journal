@@ -45,28 +45,77 @@ export class WarJournalDB extends Dexie {
       tonight: 'id, date',
       meta: 'key',
     });
+    // v2: instances gain territory/hordeAccess/quests, progress gains questsDone.
+    this.version(2)
+      .stores({})
+      .upgrade(async (tx) => {
+        await tx.table('instances').toCollection().modify((i: Instance) => Object.assign(i, normalizeInstance(i)));
+        await tx.table('progress').toCollection().modify((p: InstanceProgress) => Object.assign(p, normalizeProgress(p)));
+      });
   }
 }
 
 export const db = new WarJournalDB();
 
-/** Bump when the seed files gain new rows. Existing rows are never overwritten. */
-export const SEED_VERSION = 1;
+/**
+ * Bump when the seed files change. New rows are added; existing seeded rows get
+ * their reference data (territory, Horde access, quests) refreshed, but the
+ * player's own edits (notes, bosses, wings, links, renames) are kept.
+ */
+export const SEED_VERSION = 2;
 
-type SeedInstance = Omit<Instance, 'wings' | 'bosses' | 'guideLinks' | 'notes' | 'source' | 'updatedAt'> &
-  Partial<Pick<Instance, 'wings' | 'bosses' | 'notes'>>;
+/** Names and notes earlier seeds shipped, so we only replace text the player never touched. */
+const OLD_SEED_NAMES: Record<string, string[]> = {
+  'alcaz-island-prison': ['Alcaz Island Prison'],
+  'excavation-site': ['Excavation Site'],
+};
+const OLD_SEED_NOTES: Record<string, string[]> = {
+  'barrow-deeps': ['Sources disagree on the entrance (Mount Hyjal vs. near Blackmaw Hold). Confirm in game.'],
+};
+
+type SeedInstance = Omit<
+  Instance,
+  'wings' | 'bosses' | 'guideLinks' | 'notes' | 'territory' | 'hordeAccess' | 'quests' | 'source' | 'updatedAt'
+> &
+  Partial<Pick<Instance, 'wings' | 'bosses' | 'notes' | 'territory' | 'hordeAccess' | 'quests'>>;
+
+/** Fills fields added after v1 so older rows (and old backups) still work. */
+export function normalizeInstance<T extends Partial<Instance>>(i: T): T & Pick<Instance, 'territory' | 'hordeAccess' | 'quests'> {
+  return { ...i, territory: i.territory ?? 'contested', hordeAccess: i.hordeAccess ?? '', quests: i.quests ?? [] };
+}
+
+export function normalizeProgress<T extends Partial<InstanceProgress>>(p: T): T & Pick<InstanceProgress, 'questsDone'> {
+  return { ...p, questsDone: p.questsDone ?? [] };
+}
 
 export function seedInstanceRows(now = new Date().toISOString()): Instance[] {
-  return (seedInstances as SeedInstance[]).map((s) => ({
-    wings: [],
-    bosses: [],
-    notes: '',
-    ...s,
-    size: s.size as Instance['size'],
-    guideLinks: [],
-    source: 'manual',
-    updatedAt: now,
-  }));
+  return (seedInstances as SeedInstance[]).map((s) =>
+    normalizeInstance({
+      wings: [],
+      bosses: [],
+      notes: '',
+      ...s,
+      size: s.size as Instance['size'],
+      guideLinks: [],
+      source: 'manual' as const,
+      updatedAt: now,
+    }),
+  );
+}
+
+/** Refreshes reference data on an existing seeded row without touching the player's edits. */
+export function patchSeededInstance(existing: Instance, seed: Instance): Instance {
+  const renamedBySeed = existing.name === seed.name || (OLD_SEED_NAMES[seed.id] ?? []).includes(existing.name);
+  const notesUntouched = existing.notes === '' || (OLD_SEED_NOTES[seed.id] ?? []).includes(existing.notes);
+  return {
+    ...normalizeInstance(existing),
+    name: renamedBySeed ? seed.name : existing.name,
+    continent: existing.continent || seed.continent,
+    notes: notesUntouched ? seed.notes : existing.notes,
+    territory: seed.territory,
+    hordeAccess: seed.hordeAccess,
+    quests: seed.quests,
+  };
 }
 
 export function seedEventRows(now = new Date().toISOString()): GameEvent[] {
@@ -77,13 +126,17 @@ export function seedEventRows(now = new Date().toISOString()): GameEvent[] {
   }));
 }
 
-/** Adds any seed instances and events that aren't in the database yet. */
+/** Adds seed instances and events that aren't in the database yet and refreshes seeded reference data. */
 export async function ensureSeed(database: WarJournalDB = db): Promise<void> {
   const row = await database.meta.get('seedVersion');
   if (row && (row.value as number) >= SEED_VERSION) return;
   await database.transaction('rw', database.instances, database.events, database.meta, async () => {
-    const haveI = new Set(await database.instances.toCollection().primaryKeys());
-    await database.instances.bulkAdd(seedInstanceRows().filter((i) => !haveI.has(i.id)));
+    const have = new Map((await database.instances.toArray()).map((i) => [i.id, i]));
+    const seeds = seedInstanceRows();
+    await database.instances.bulkAdd(seeds.filter((i) => !have.has(i.id)));
+    await database.instances.bulkPut(
+      seeds.filter((i) => have.has(i.id)).map((i) => patchSeededInstance(have.get(i.id)!, i)),
+    );
     const haveE = new Set(await database.events.toCollection().primaryKeys());
     await database.events.bulkAdd(seedEventRows().filter((e) => !haveE.has(e.id)));
     await database.meta.put({ key: 'seedVersion', value: SEED_VERSION });
