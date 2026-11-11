@@ -1,4 +1,4 @@
-import { db, ensureSeed } from './db';
+import { db, ensureSeed, normalizeInstance, normalizeProgress } from './db';
 import type { StoredImage } from '../lib/types';
 
 export const BACKUP_FORMAT = 'horde-war-journal';
@@ -79,8 +79,12 @@ export async function importAll(backup: Backup): Promise<void> {
   await db.transaction('rw', db.tables, async () => {
     for (const t of db.tables) await t.clear();
     for (const t of TABLES) {
-      const rows = backup.tables[t];
-      if (Array.isArray(rows) && rows.length) await db.table(t).bulkAdd(rows);
+      let rows = backup.tables[t];
+      if (!Array.isArray(rows) || !rows.length) continue;
+      // Version 1 backups predate quests and territory.
+      if (t === 'instances') rows = rows.map((r) => normalizeInstance(r as object));
+      if (t === 'progress') rows = rows.map((r) => normalizeProgress(r as object));
+      await db.table(t).bulkAdd(rows);
     }
     if (images.length) await db.images.bulkAdd(images);
   });

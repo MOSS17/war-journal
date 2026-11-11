@@ -9,6 +9,7 @@ import {
   setInstanceProgress,
   setRetired,
   toggleObjective,
+  toggleQuest,
   visibleTonight,
 } from './actions';
 import { exportAll, importAll } from './backup';
@@ -30,6 +31,48 @@ describe('seed', () => {
     expect(await db.instances.where('kind').equals('dungeon').count()).toBe(29);
     expect(await db.instances.where('kind').equals('raid').count()).toBe(3);
     expect(await db.events.count()).toBe(4);
+  });
+});
+
+describe('seed v2 patch', () => {
+  it('refreshes reference data on old rows and keeps player edits', async () => {
+    const old = (await db.instances.get('alcaz-island-prison'))!;
+    const { territory: _t, hordeAccess: _h, quests: _q, ...v1 } = old;
+    await db.instances.put({ ...v1, name: 'Alcaz Island Prison', notes: 'Bring water breathing', bosses: ['Warden'] } as typeof old);
+    await db.instances.update('excavation-site', { name: 'My Dig' });
+    await db.meta.put({ key: 'seedVersion', value: 1 });
+    await ensureSeed();
+    const alcaz = (await db.instances.get('alcaz-island-prison'))!;
+    expect(alcaz.name).toBe('Alcaz Prison');
+    expect(alcaz.territory).toBe('contested');
+    expect(alcaz.hordeAccess).not.toBe('');
+    expect(Array.isArray(alcaz.quests)).toBe(true);
+    expect(alcaz.notes).toBe('Bring water breathing');
+    expect(alcaz.bosses).toEqual(['Warden']);
+    expect((await db.instances.get('excavation-site'))!.name).toBe('My Dig');
+    expect((await db.instances.get('kroldok-stronghold'))!.continent).toBe('Eastern Kingdoms');
+  });
+
+  it('marks Alliance-territory dungeons', async () => {
+    const ally = (await db.instances.toArray()).filter((i) => i.territory === 'alliance').map((i) => i.id).sort();
+    expect(ally).toEqual(['deadmines', 'gnomeregan', 'hall-of-thanes', 'the-stockade']);
+  });
+});
+
+describe('quests', () => {
+  it('ticks and unticks a quest without changing run status', async () => {
+    const a = await gruk();
+    await toggleQuest(a, 'scarlet-monastery', 'q1', true);
+    let rec = (await db.progress.get(`${a}:scarlet-monastery`))!;
+    expect(rec.questsDone).toEqual(['q1']);
+    expect(rec.status).toBe('not-run');
+    await setInstanceProgress(a, 'scarlet-monastery', { status: 'run', wingsCleared: ['Library'], bossesKilled: [], timesRun: 1 });
+    rec = (await db.progress.get(`${a}:scarlet-monastery`))!;
+    expect(rec.questsDone).toEqual(['q1']);
+    await toggleQuest(a, 'scarlet-monastery', 'q1', false);
+    rec = (await db.progress.get(`${a}:scarlet-monastery`))!;
+    expect(rec.questsDone).toEqual([]);
+    expect(rec.status).toBe('run');
   });
 });
 
@@ -109,5 +152,23 @@ describe('backup', () => {
     const img = (await db.images.get('img'))!;
     expect(new Uint8Array(await img.blob.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
     expect(await db.instances.count()).toBe(32);
+  });
+});
+
+describe('backup v1 compatibility', () => {
+  it('imports a backup made before quests and territory', async () => {
+    const a = await gruk();
+    await setInstanceProgress(a, 'deadmines', { status: 'run', wingsCleared: [], bossesKilled: [], timesRun: 1 });
+    const backup = await exportAll();
+    backup.tables.instances = (backup.tables.instances as Record<string, unknown>[]).map(
+      ({ territory: _t, hordeAccess: _h, quests: _q, ...rest }) => rest,
+    );
+    backup.tables.progress = (backup.tables.progress as Record<string, unknown>[]).map(({ questsDone: _q, ...rest }) => rest);
+    backup.tables.meta = [{ key: 'seedVersion', value: 1 }];
+    await importAll(backup);
+    expect((await db.progress.get(`${a}:deadmines`))!.questsDone).toEqual([]);
+    const dm = (await db.instances.get('deadmines'))!;
+    expect(dm.territory).toBe('alliance');
+    expect(Array.isArray(dm.quests)).toBe(true);
   });
 });

@@ -66,6 +66,28 @@ export interface GuideLink {
   url: string;
 }
 
+/** Whose land the entrance sits in, from a Horde player's point of view. */
+export type Territory = 'horde' | 'contested' | 'alliance';
+export type QuestFaction = 'horde' | 'alliance' | 'both';
+export type QuestKind = 'quest' | 'key' | 'attunement';
+
+export interface InstanceQuest {
+  /** Unique within its instance. */
+  id: string;
+  name: string;
+  faction: QuestFaction;
+  kind: QuestKind;
+  giver: string;
+  location: string;
+  minLevel?: number;
+  /** The quest (or chain) you must finish first. */
+  prereq?: string;
+  /** How to pick it up and what to do inside. */
+  howTo: string;
+  /** False when only unofficial sources mention it. */
+  confirmed: boolean;
+}
+
 export interface Instance {
   id: string;
   name: string;
@@ -81,6 +103,10 @@ export interface Instance {
   bosses: string[];
   guideLinks: GuideLink[];
   notes: string;
+  territory: Territory;
+  /** How a Horde character reaches the entrance. */
+  hordeAccess: string;
+  quests: InstanceQuest[];
   source: Source;
   updatedAt: ISOTime;
 }
@@ -95,6 +121,8 @@ export interface InstanceProgress {
   status: RunStatus;
   wingsCleared: string[];
   bossesKilled: string[];
+  /** Ids of InstanceQuest rows this character has finished. */
+  questsDone: string[];
   timesRun: number;
   firstClearDate?: ISODate;
   source: Source;

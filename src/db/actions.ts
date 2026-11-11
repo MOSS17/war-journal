@@ -147,7 +147,9 @@ export async function setInstanceProgress(
   instanceId: string,
   input: ProgressInput,
 ): Promise<string[]> {
+  const prev = await db.progress.get(progressId(characterId, instanceId));
   const rec: InstanceProgress = {
+    questsDone: prev?.questsDone ?? [],
     ...input,
     firstClearDate: input.status === 'cleared' ? (input.firstClearDate || todayISO()) : input.firstClearDate,
     id: progressId(characterId, instanceId),
@@ -289,6 +291,29 @@ export function resolveStatus(
   if (current === 'cleared') return 'cleared';
   if (wings.length || bosses.length) return 'run';
   return current;
+}
+
+/** Ticks or unticks a dungeon quest for one character. Run status is left alone. */
+export async function toggleQuest(characterId: string, instanceId: string, questId: string, done: boolean) {
+  await db.transaction('rw', db.progress, async () => {
+    const id = progressId(characterId, instanceId);
+    const rec = await db.progress.get(id);
+    const list = rec?.questsDone ?? [];
+    const questsDone = done ? [...new Set([...list, questId])] : list.filter((q) => q !== questId);
+    await db.progress.put({
+      status: 'not-run',
+      wingsCleared: [],
+      bossesKilled: [],
+      timesRun: 0,
+      ...rec,
+      id,
+      characterId,
+      instanceId,
+      questsDone,
+      source: 'manual',
+      updatedAt: nowISO(),
+    });
+  });
 }
 
 // ---------- Instances ----------

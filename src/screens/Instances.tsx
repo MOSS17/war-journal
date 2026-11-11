@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Page } from '../components/Shell';
-import { ClassDot, DiffDot, Segmented, StatusPill } from '../components/ui';
+import { Check, ClassDot, DiffDot, Segmented, StatusPill } from '../components/ui';
 import { Icon } from '../components/icons';
 import { useOverlay } from '../components/overlay';
 import { db } from '../db/db';
-import { updateInstance } from '../db/actions';
+import { toggleQuest, updateInstance } from '../db/actions';
 import { useInstances, usePlanContext } from '../db/hooks';
 import {
   DIFFICULTY_COLOR,
@@ -20,7 +20,15 @@ import {
   levelRelation,
   todayISO,
 } from '../lib/logic';
-import type { Character, Instance, InstanceProgress } from '../lib/types';
+import type { Character, Instance, InstanceProgress, InstanceQuest, Territory } from '../lib/types';
+
+export const TERRITORY_LABEL: Record<Territory, string> = {
+  horde: 'Horde territory',
+  contested: 'Contested',
+  alliance: 'Alliance territory',
+};
+
+const QUEST_KIND_LABEL: Record<InstanceQuest['kind'], string | null> = { quest: null, key: 'Key', attunement: 'Attunement' };
 
 type Kind = 'all' | 'dungeon' | 'raid';
 
@@ -38,6 +46,7 @@ export function Instances() {
   const kind = (params.get('kind') as Kind) || 'all';
   const fitsOn = !!char && params.get('fits') !== '0';
   const newOnly = params.get('new') === '1';
+  const hideAlly = params.get('ally') === '0';
 
   const set = (k: string, v: string | null) => {
     const next = new URLSearchParams(params);
@@ -54,19 +63,23 @@ export function Instances() {
     (i) =>
       (kind === 'all' || i.kind === kind) &&
       (!newOnly || i.isNewInForever) &&
+      (!hideAlly || i.territory !== 'alliance') &&
       (!fitsOn || i.kind === 'raid' || fitsLevel(i, char!.level) || (progress.get(i.id)?.status ?? 'not-run') !== 'not-run'),
   );
   const dungeons = shown.filter((i) => i.kind === 'dungeon');
+  const hordeSide = dungeons.filter((i) => i.territory !== 'alliance');
+  const allySide = dungeons.filter((i) => i.territory === 'alliance');
   const raids = shown.filter((i) => i.kind === 'raid');
   const counts = {
     d: instances.filter((i) => i.kind === 'dungeon').length,
     r: instances.filter((i) => i.kind === 'raid').length,
     n: instances.filter((i) => i.isNewInForever && i.kind === 'dungeon').length,
+    h: instances.filter((i) => i.kind === 'dungeon' && i.territory !== 'alliance').length,
   };
 
   const selected =
     instances.find((i) => i.id === params.get('i')) ??
-    dungeons.find((i) => char && fitsLevel(i, char.level) && progress.get(i.id)?.status !== 'cleared') ??
+    hordeSide.find((i) => char && fitsLevel(i, char.level) && progress.get(i.id)?.status !== 'cleared') ??
     shown[0];
 
   const select = (id: string) => {
@@ -98,6 +111,7 @@ export function Instances() {
           {char ? <DiffDot d={d} size={8} /> : <span className="dot" style={{ background: 'var(--dust)' }} />}
           <span className="ellipsis">{i.name}</span>
           {i.isNewInForever && <span className="pill new sm">New</span>}
+          {i.territory === 'alliance' && <span className="pill ally sm">Alliance land</span>}
         </span>
         <span className="zone ellipsis">{i.zone}</span>
         <span className="num">{levelRange(i)}</span>
@@ -113,7 +127,7 @@ export function Instances() {
     <Page
       variant="instances"
       title="Instances"
-      eyebrow={`${counts.d} dungeons · ${counts.r} raids · ${counts.n} new in Forever`}
+      eyebrow={`${counts.d} dungeons · ${counts.h} Horde-friendly · ${counts.r} raids · ${counts.n} new in Forever`}
       actions={
         <button type="button" className="btn2" onClick={() => open({ kind: 'instance' })}>
           + Add instance
@@ -143,6 +157,10 @@ export function Instances() {
             {newOnly && <Icon.check size={14} />}
             New in Forever
           </button>
+          <button type="button" className="tog" aria-pressed={hideAlly} onClick={() => set('ally', hideAlly ? null : '0')}>
+            {hideAlly && <Icon.check size={14} />}
+            Hide Alliance side
+          </button>
           {active.length > 0 && (
             <label htmlFor="inst-char" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 14, color: 'var(--ash)' }}>Progress for</span>
@@ -166,7 +184,19 @@ export function Instances() {
               <span className="eyebrow size">Size</span>
               <span className="eyebrow">{char ? char.firstName : 'Status'}</span>
             </div>
-            {dungeons.map(row)}
+            {hordeSide.length > 0 && (
+              <div style={{ padding: '14px 20px 6px' }}>
+                <span className="eyebrow">Horde &amp; contested</span>
+              </div>
+            )}
+            {hordeSide.map(row)}
+            {allySide.length > 0 && (
+              <div style={{ padding: '18px 20px 6px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span className="eyebrow">Alliance territory</span>
+                <span className="help">Possible as Horde, but you’ll travel through enemy land.</span>
+              </div>
+            )}
+            {allySide.map(row)}
             {dungeons.length === 0 && kind !== 'raid' && (
               <p className="muted" style={{ padding: '16px 20px' }}>
                 No dungeons match these filters.
@@ -272,6 +302,8 @@ function InstanceDetail({
                       ? `${rec.wingsCleared.length} of ${inst.wings.length} wings`
                       : 'Started'
                     : rel.text;
+              const qTotal = inst.quests.filter((q) => q.faction !== 'alliance').length;
+              const qDone = rec ? inst.quests.filter((q) => q.faction !== 'alliance' && rec.questsDone.includes(q.id)).length : 0;
               const color = rec?.status === 'cleared' ? 'var(--ok)' : rec?.status === 'run' ? 'var(--warn)' : rel.tone === 'deadly' || rel.tone === 'trivial' ? 'var(--dust)' : DIFFICULTY_COLOR[rel.tone];
               return (
                 <button
@@ -287,12 +319,25 @@ function InstanceDetail({
                       {c.firstName} · {c.level}
                     </span>
                   </span>
-                  <span style={{ fontSize: 14, color }}>{txt}</span>
+                  <span style={{ fontSize: 14, color }}>
+                    {txt}
+                    {qTotal > 0 && <span style={{ color: 'var(--dust)' }}> · {qDone}/{qTotal} quests</span>}
+                  </span>
                 </button>
               );
             })}
           </div>
         )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span className="eyebrow">Getting in as Horde</span>
+          <div>
+            <span className={`pill ${inst.territory === 'alliance' ? 'ally' : inst.territory === 'horde' ? 'horde' : ''}`}>{TERRITORY_LABEL[inst.territory]}</span>
+          </div>
+          {inst.hordeAccess && <p style={{ fontSize: 15, color: 'var(--ash)', margin: 0 }}>{inst.hordeAccess}</p>}
+        </div>
+
+        <QuestList inst={inst} char={char} progress={progress} />
 
         {inst.wings.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -382,5 +427,79 @@ function InstanceDetail({
         </div>
       </div>
     </>
+  );
+}
+
+function QuestList({ inst, char, progress }: { inst: Instance; char?: Character; progress: InstanceProgress[] }) {
+  const done = new Set(progress.find((p) => p.characterId === char?.id && p.instanceId === inst.id)?.questsDone ?? []);
+  const mine = inst.quests.filter((q) => q.faction !== 'alliance');
+  const ally = inst.quests.filter((q) => q.faction === 'alliance');
+  const doneCount = mine.filter((q) => done.has(q.id)).length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="sect">
+        <span className="eyebrow">Quests</span>
+        {char && mine.length > 0 && (
+          <span className="help">
+            {doneCount} of {mine.length} done for {char.firstName}
+          </span>
+        )}
+      </div>
+      {inst.quests.length === 0 && <span style={{ fontSize: 14, color: 'var(--ash)' }}>No quests confirmed yet.</span>}
+      {inst.quests.length > 0 && mine.length === 0 && (
+        <span style={{ fontSize: 14, color: 'var(--ash)' }}>No Horde quests for this one.</span>
+      )}
+      {mine.map((q) => (
+        <div key={q.id} className="quest">
+          {char ? (
+            <Check checked={done.has(q.id)} onChange={(v) => toggleQuest(char.id, inst.id, q.id, v)}>
+              <QuestTitle q={q} />
+            </Check>
+          ) : (
+            <QuestTitle q={q} />
+          )}
+          <QuestBody q={q} />
+        </div>
+      ))}
+      {ally.length > 0 && (
+        <details className="quest-ally">
+          <summary>Alliance-only quests ({ally.length})</summary>
+          <p className="help" style={{ margin: '4px 0 8px' }}>
+            A Horde character can’t pick these up. Shown so you know what Alliance groups are there for.
+          </p>
+          {ally.map((q) => (
+            <div key={q.id} className="quest">
+              <QuestTitle q={q} />
+              <QuestBody q={q} />
+            </div>
+          ))}
+        </details>
+      )}
+    </div>
+  );
+}
+
+function QuestTitle({ q }: { q: InstanceQuest }) {
+  const kind = QUEST_KIND_LABEL[q.kind];
+  return (
+    <span style={{ display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+      <span style={{ fontWeight: 600 }}>{q.name}</span>
+      {kind && <span className="pill main sm">{kind}</span>}
+      {!q.confirmed && <span className="pill locked sm">Unconfirmed</span>}
+    </span>
+  );
+}
+
+function QuestBody({ q }: { q: InstanceQuest }) {
+  return (
+    <div className="quest-body">
+      <span>
+        {q.giver} · {q.location}
+        {q.minLevel ? ` · level ${q.minLevel}+` : ''}
+      </span>
+      {q.prereq && <span>Requires: {q.prereq}</span>}
+      <span style={{ color: 'var(--bone)' }}>{q.howTo}</span>
+    </div>
   );
 }

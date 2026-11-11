@@ -10,7 +10,7 @@ import { addInstance, deleteEvent, deleteInstance, saveEvent, updateInstance } f
 import { downloadJson, exportAll, importAll, parseBackup, resetAll } from '../db/backup';
 import { MAX_LEVEL } from '../lib/gamedata';
 import { todayISO } from '../lib/logic';
-import type { GuideLink, InstanceKind, InstanceSize } from '../lib/types';
+import type { GuideLink, InstanceKind, InstanceSize, Territory } from '../lib/types';
 
 // ---------- Confirm ----------
 
@@ -131,6 +131,8 @@ export function InstanceForm({ id, onClose }: ModalProps & { id?: string }) {
   const [wings, setWings] = useState<string[]>([]);
   const [bosses, setBosses] = useState<string[]>([]);
   const [links, setLinks] = useState<GuideLink[]>([]);
+  const [territory, setTerritory] = useState<Territory>('contested');
+  const [hordeAccess, setHordeAccess] = useState('');
   const [tried, setTried] = useState(false);
 
   useEffect(() => {
@@ -147,6 +149,8 @@ export function InstanceForm({ id, onClose }: ModalProps & { id?: string }) {
     setWings(existing.wings);
     setBosses(existing.bosses);
     setLinks(existing.guideLinks);
+    setTerritory(existing.territory);
+    setHordeAccess(existing.hordeAccess);
     setReady(true);
   }, [ready, existing]);
 
@@ -172,13 +176,15 @@ export function InstanceForm({ id, onClose }: ModalProps & { id?: string }) {
       wings,
       bosses,
       guideLinks: links.filter((l) => l.url.trim()),
+      territory,
+      hordeAccess: hordeAccess.trim(),
     };
     if (id) {
       await updateInstance(id, data);
       toast(`${data.name} saved`);
       onClose();
     } else {
-      const newId = await addInstance({ ...data, notes: '' });
+      const newId = await addInstance({ ...data, notes: '', quests: [] });
       toast(`${data.name} added`);
       onClose();
       navigate(`/instances?i=${newId}`);
@@ -287,6 +293,22 @@ export function InstanceForm({ id, onClose }: ModalProps & { id?: string }) {
             <SwitchRow title="New in Forever" checked={isNew} onChange={setIsNew} />
           </div>
         </div>
+        <div className="field">
+          <span className="lab">Territory</span>
+          <Segmented
+            label="Territory"
+            value={territory}
+            onChange={setTerritory}
+            options={[
+              { value: 'horde', label: 'Horde' },
+              { value: 'contested', label: 'Contested' },
+              { value: 'alliance', label: 'Alliance' },
+            ]}
+          />
+        </div>
+        <Field label="How Horde gets in" htmlFor="if-access" optional help="Flight point, route, keys">
+          <textarea id="if-access" className="inp" rows={2} value={hordeAccess} onChange={(e) => setHordeAccess(e.target.value)} />
+        </Field>
         <Field label="Wings" htmlFor="if-wings" optional help="Each wing becomes an objective on dungeon plans">
           <TagInput id="if-wings" tags={wings} onChange={setWings} />
         </Field>
