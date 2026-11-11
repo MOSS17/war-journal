@@ -1,29 +1,40 @@
-import { db, ensureSeed, normalizeInstance, normalizeProgress } from './db';
-import type { StoredImage } from '../lib/types';
+// Backup files: everything the player has, as one JSON file, and restoring
+// one in place of what's on the server now.
+import { db } from './db';
+import { currentUserId, sessionReady } from './supabase';
+import {
+  asRecords,
+  fetchEventCatalog,
+  fetchInstanceCatalog,
+  fetchKind,
+  queryClient,
+  RECORD_KINDS,
+  replaceAll,
+  type RecordKind,
+} from './store';
+import type { GameEvent, Instance, StoredImage } from '../lib/types';
+import {
+  isUntouchedEvent,
+  isUntouchedInstance,
+  normalizeInstance,
+  normalizeProgress,
+  overridesFor,
+} from '../lib/catalog';
 
 export const BACKUP_FORMAT = 'horde-war-journal';
-export const BACKUP_VERSION = 1;
-
-const TABLES = [
-  'characters',
-  'professions',
-  'instances',
-  'progress',
-  'plans',
-  'journal',
-  'library',
-  'events',
-  'tonight',
-  'meta',
-] as const;
-
-type TableName = (typeof TABLES)[number];
+/**
+ * 1: the browser-only app. Instances and events hold every row, and seeded
+ *    rows missing from the file are restored.
+ * 2: instances and events hold the list as the player sees it, so seeded rows
+ *    missing from the file were removed by the player and stay hidden.
+ */
+export const BACKUP_VERSION = 2;
 
 export interface Backup {
   format: typeof BACKUP_FORMAT;
   version: number;
   exportedAt: string;
-  tables: Record<TableName, unknown[]>;
+  tables: Partial<Record<RecordKind, unknown[]>>;
   images: { id: string; type: string; createdAt: string; dataUrl: string }[];
 }
 
@@ -44,8 +55,10 @@ function dataUrlToBlob(url: string): Blob {
 }
 
 export async function exportAll(): Promise<Backup> {
-  const tables = {} as Backup['tables'];
-  for (const t of TABLES) tables[t] = await db.table(t).toArray();
+  await sessionReady;
+  const uid = currentUserId() ?? null;
+  const tables: Backup['tables'] = {};
+  for (const k of RECORD_KINDS) tables[k] = await fetchKind(uid, k);
   const imgs = await db.images.toArray();
   const images = await Promise.all(
     imgs.map(async (i) => ({ id: i.id, type: i.type, createdAt: i.createdAt, dataUrl: await blobToDataUrl(i.blob) })),
@@ -68,7 +81,34 @@ export function parseBackup(text: string): Backup {
   return b as Backup;
 }
 
-/** Replaces everything in the database with the backup's contents. */
+/**
+ * The records to store for full tables of rows (from a backup or the old local
+ * database). Seeded instances and events the player never changed are left to
+ * the catalog; with `hideMissing`, seeded rows absent from the tables are hidden.
+ */
+export async function recordsFromTables(tables: Backup['tables'], { hideMissing }: { hideMissing: boolean }) {
+  const [instanceCatalog, eventCatalog] = await Promise.all([fetchInstanceCatalog(), fetchEventCatalog()]);
+  const out: ReturnType<typeof asRecords>[number][] = [];
+  for (const k of RECORD_KINDS) {
+    let rows = tables[k];
+    if (!Array.isArray(rows)) {
+      // A table missing from the file is empty; for seeded kinds that means "nothing changed".
+      if (k !== 'instances' && k !== 'events') continue;
+      rows = hideMissing ? [] : k === 'instances' ? instanceCatalog : eventCatalog;
+    }
+    if (k === 'instances') {
+      rows = overridesFor((rows as Instance[]).map((r) => normalizeInstance(r)), instanceCatalog, isUntouchedInstance, { hideMissing });
+    } else if (k === 'events') {
+      rows = overridesFor(rows as GameEvent[], eventCatalog, isUntouchedEvent, { hideMissing });
+    } else if (k === 'progress') {
+      rows = rows.map((r) => normalizeProgress(r as object));
+    }
+    out.push(...asRecords(k, rows));
+  }
+  return out;
+}
+
+/** Replaces everything on the server, and the screenshots in this browser, with the backup's contents. */
 export async function importAll(backup: Backup): Promise<void> {
   const images: StoredImage[] = (backup.images ?? []).map((i) => ({
     id: i.id,
@@ -76,27 +116,19 @@ export async function importAll(backup: Backup): Promise<void> {
     createdAt: i.createdAt,
     blob: dataUrlToBlob(i.dataUrl),
   }));
-  await db.transaction('rw', db.tables, async () => {
-    for (const t of db.tables) await t.clear();
-    for (const t of TABLES) {
-      let rows = backup.tables[t];
-      if (!Array.isArray(rows) || !rows.length) continue;
-      // Version 1 backups predate quests and territory.
-      if (t === 'instances') rows = rows.map((r) => normalizeInstance(r as object));
-      if (t === 'progress') rows = rows.map((r) => normalizeProgress(r as object));
-      await db.table(t).bulkAdd(rows);
-    }
+  await replaceAll(await recordsFromTables(backup.tables, { hideMissing: (backup.version ?? 1) >= 2 }));
+  await db.transaction('rw', db.images, async () => {
+    await db.images.clear();
     if (images.length) await db.images.bulkAdd(images);
   });
-  await ensureSeed();
 }
 
-/** Wipes everything and restores the seed instances and events. */
+/** Deletes everything the player has. The instance list and dates come back from the catalog. */
 export async function resetAll(): Promise<void> {
-  await db.transaction('rw', db.tables, async () => {
-    for (const t of db.tables) await t.clear();
-  });
-  await ensureSeed();
+  await sessionReady;
+  if (currentUserId()) await replaceAll([]);
+  await db.images.clear();
+  await queryClient.invalidateQueries({ queryKey: ['kind'] });
 }
 
 export function downloadJson(data: unknown, filename: string) {

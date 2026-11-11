@@ -10,6 +10,9 @@ import { Plans } from './screens/Plans';
 import { Journal } from './screens/Journal';
 import { Library } from './screens/Library';
 import { Glance } from './screens/Glance';
+import { useLiveUpdates } from './db/store';
+import { importLocalData } from './db/localImport';
+import { SaveError } from './db/supabase';
 
 const KEYS: Record<string, ModalSpec> = {
   n: { kind: 'quick' },
@@ -51,6 +54,31 @@ function Shortcuts() {
   return null;
 }
 
+/**
+ * Keeps the data in step with the server: live updates from other tabs and
+ * devices, the one-time move of an older browser-only journal, and a message
+ * when a save doesn't reach the server (the form stays open with its input).
+ */
+function CloudSync() {
+  const { toast } = useOverlay();
+  useLiveUpdates();
+  useEffect(() => {
+    importLocalData()
+      .then((r) => r && toast(`Your journal now lives in the cloud (${r.records} records moved). This browser keeps its copy.`))
+      .catch((e) => console.error('Moving the local journal failed', e));
+  }, [toast]);
+  useEffect(() => {
+    const onRejection = (e: PromiseRejectionEvent) => {
+      if (!(e.reason instanceof SaveError)) return;
+      e.preventDefault();
+      toast(e.reason.message);
+    };
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => window.removeEventListener('unhandledrejection', onRejection);
+  }, [toast]);
+  return null;
+}
+
 function ScrollTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -66,6 +94,7 @@ export function App() {
     <OverlayProvider>
       <Shortcuts />
       <ScrollTop />
+      <CloudSync />
       <div className="app">
         <Routes>
           <Route path="/" element={<WarBoard />} />

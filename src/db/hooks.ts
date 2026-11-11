@@ -1,22 +1,18 @@
-// Every read the screens make. Each hook builds on `useKind`, which loads one
-// whole kind of row; the rest is filtering and sorting in memory (the data set
-// is small). Swapping the storage only means changing `useKind`.
+// Every read the screens make. Each hook builds on `useKind` (src/db/store.ts),
+// which loads one whole kind of row from Supabase; the rest is filtering and
+// sorting in memory (the data set is small).
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db';
 import { getImage } from './actions';
+import { useKind, type RecordKind } from './store';
 import type { Character, Profession } from '../lib/types';
 import { LIBRARY_CATEGORIES } from '../lib/gamedata';
 import type { PlanContext } from '../lib/logic';
-import { progressId, type Kind, type RowOf } from '../lib/mutations';
-
-/** All rows of one kind, or undefined while loading. */
-function useKind<K extends Kind>(kind: K): RowOf[K][] | undefined {
-  return useLiveQuery(() => db.table(kind).toArray() as Promise<RowOf[K][]>, [kind]);
-}
+import { progressId, type RowOf } from '../lib/mutations';
 
 /** One row by id, or undefined while loading or when it doesn't exist. */
-function useRow<K extends Kind>(kind: K, id: string | undefined): RowOf[K] | undefined {
+function useRow<K extends RecordKind>(kind: K, id: string | undefined): RowOf[K] | undefined {
   const all = useKind(kind);
   return useMemo(() => (id ? all?.find((r) => (r as { id: string }).id === id) : undefined), [all, id]);
 }
@@ -154,16 +150,14 @@ export function useMeta<T>(key: string, fallback: T): T | undefined {
 
 /** How much the player has stored, for the Backup & data screen. */
 export function useCounts() {
-  return useLiveQuery(
-    async () => ({
-      characters: await db.characters.count(),
-      plans: await db.plans.count(),
-      journal: await db.journal.count(),
-      images: await db.images.count(),
-      library: await db.library.count(),
-    }),
-    [],
-  );
+  const characters = useKind('characters');
+  const plans = useKind('plans');
+  const journal = useKind('journal');
+  const library = useKind('library');
+  const images = useLiveQuery(() => db.images.count(), []);
+  return characters && plans && journal && library && images !== undefined
+    ? { characters: characters.length, plans: plans.length, journal: journal.length, images, library: library.length }
+    : undefined;
 }
 
 // ---------- Screenshots ----------

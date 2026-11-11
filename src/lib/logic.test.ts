@@ -12,7 +12,7 @@ import {
   type PlanContext,
 } from './logic';
 import type { Character, WarPlan } from './types';
-import { seedInstanceRows } from '../db/db';
+import { seedInstanceRows } from './catalog';
 
 const instances = seedInstanceRows('2026-11-05T00:00:00Z');
 const byId = (id: string) => instances.find((i) => i.id === id)!;

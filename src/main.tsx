@@ -1,22 +1,20 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
+import { QueryClientProvider } from '@tanstack/react-query';
 import './styles/app.css';
 import { App } from './App';
-import { ensureSeed } from './db/db';
+import { queryClient } from './db/store';
 
-const root = createRoot(document.getElementById('root')!);
+// Screenshots still live in this browser; ask it not to evict them under storage pressure.
+navigator.storage?.persist?.().catch(() => {});
 
-ensureSeed()
-  .catch((e) => console.error('Seeding failed', e))
-  .finally(() => {
-    // Ask the browser not to evict our IndexedDB data under storage pressure.
-    navigator.storage?.persist?.().catch(() => {});
-    root.render(
-      <StrictMode>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </StrictMode>,
-    );
-  });
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
+  </StrictMode>,
+);
