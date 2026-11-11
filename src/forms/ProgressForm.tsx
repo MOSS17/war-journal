@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Modal, type ModalProps } from '../components/Modal';
 import { Avatar, CoinsInput, EmptyState, Stepper, XpRange } from '../components/ui';
 import { useOverlay } from '../components/overlay';
-import { db } from '../db/db';
 import { saveProgress } from '../db/actions';
-import { sortCharacters } from '../db/hooks';
+import { useActivePlans, useCharacters, useProfessions } from '../db/hooks';
 import { MAX_LEVEL, MAX_SKILL, PRIMARY_PROFESSIONS, SECONDARY_PROFESSIONS } from '../lib/gamedata';
 import { formatMoney, formatMoneyDelta, fullName, uid } from '../lib/logic';
 import type { Character, Profession, ProfessionKind } from '../lib/types';
@@ -15,7 +13,8 @@ type ProfRow = Pick<Profession, 'id' | 'name' | 'kind' | 'skill'>;
 
 export function ProgressForm({ characterId, onClose }: ModalProps & { characterId?: string }) {
   const { open, toast, celebrate } = useOverlay();
-  const chars = useLiveQuery(async () => sortCharacters(await db.characters.toArray()).filter((c) => c.status === 'active'), []);
+  const allChars = useCharacters();
+  const chars = useMemo(() => allChars?.filter((c) => c.status === 'active'), [allChars]);
   const [charId, setCharId] = useState<string | undefined>(characterId);
   const char = chars?.find((c) => c.id === charId) ?? chars?.[0];
 
@@ -72,17 +71,16 @@ function ProgressFormInner({
   onClose: () => void;
   onSaved: (completed: string[], entryTitle: string, writeEntry: boolean) => void;
 }) {
-  const initialProfs = useLiveQuery(() => db.professions.where('characterId').equals(char.id).toArray(), [char.id]);
-  const goldPlans = useLiveQuery(
-    async () =>
-      (await db.plans.where('status').equals('active').toArray()).filter(
-        (p) => p.type === 'gold' && (p.ownerId === char.id || p.ownerId === ACCOUNT),
-      ),
-    [char.id],
+  const initialProfs = useProfessions(char.id);
+  const active = useActivePlans();
+  const goldPlans = useMemo(
+    () => active?.filter((p) => p.type === 'gold' && (p.ownerId === char.id || p.ownerId === ACCOUNT)),
+    [active, char.id],
   );
-  const others = useLiveQuery(
-    async () => (await db.characters.toArray()).filter((c) => c.status === 'active' && c.id !== char.id).reduce((s, c) => s + c.copper, 0),
-    [char.id],
+  const allChars = useCharacters();
+  const others = useMemo(
+    () => allChars?.filter((c) => c.status === 'active' && c.id !== char.id).reduce((s, c) => s + c.copper, 0),
+    [allChars, char.id],
   );
 
   const [level, setLevel] = useState(char.level);

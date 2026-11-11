@@ -1,11 +1,9 @@
 import { Link, Navigate, useParams } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Page } from '../components/Shell';
 import { Avatar, Bar, DiffDot, EmptyState, Frame, Money, Rivets, StatusPill } from '../components/ui';
 import { PlanMini } from '../components/domain';
 import { useOverlay } from '../components/overlay';
-import { db } from '../db/db';
-import { useInstances, useJournal, usePlanContext, usePlans } from '../db/hooks';
+import { useInstances, useJournal, usePlanContext, usePlans, useProfessions } from '../db/hooks';
 import { setMain } from '../db/actions';
 import { CLASS_COLOR } from '../lib/gamedata';
 import {
@@ -108,12 +106,8 @@ function CharacterDetail({ c }: { c: Character }) {
   const plans = usePlans();
   const instances = useInstances();
   const journal = useJournal();
-  const profs = useLiveQuery(
-    async () =>
-      (await db.professions.where('characterId').equals(c.id).toArray()).sort((a, b) =>
-        a.kind !== b.kind ? (a.kind === 'primary' ? -1 : 1) : b.skill - a.skill,
-      ),
-    [c.id],
+  const profs = useProfessions(c.id, (a, b) =>
+    a.kind !== b.kind ? (a.kind === 'primary' ? -1 : 1) : b.skill - a.skill,
   );
   if (!ctx || !plans || !instances || !journal || !profs) return null;
 

@@ -6,13 +6,11 @@ import { JournalPage, PlanMini, countdownText, eventWhen, upcoming } from '../co
 import { ParchGrain } from '../components/Skyline';
 import { Mark } from '../components/icons';
 import { useOverlay } from '../components/overlay';
-import { useEvents, useInstances, useJournal, usePlanContext, usePlans, useTonight } from '../db/hooks';
+import { useEvents, useInstances, useJournal, usePlanContext, usePlans, useProfessions, useTonight } from '../db/hooks';
 import { addTonightTask, deleteTonightTask, setMain, toggleTonightTask, visibleTonight } from '../db/actions';
 import { DIFFICULTY_COLOR, difficulty, fitsLevel, formatDate, fullName, isLocked, levelRange, planProgress, todayISO } from '../lib/logic';
 import { CLASS_COLOR } from '../lib/gamedata';
 import type { Character } from '../lib/types';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
 
 function FirstRun() {
   const { open } = useOverlay();
@@ -50,10 +48,7 @@ function FirstRun() {
 
 function MainCard({ main, others }: { main: Character; others: Character[] }) {
   const { open } = useOverlay();
-  const profs = useLiveQuery(
-    async () => (await db.professions.where('characterId').equals(main.id).toArray()).sort((a, b) => b.skill - a.skill).slice(0, 2),
-    [main.id],
-  );
+  const profs = useProfessions(main.id, (a, b) => b.skill - a.skill)?.slice(0, 2);
   return (
     <section className="card card-pad" aria-label="Main character" style={{ gap: 20, flex: 1 }}>
       <Rivets />

@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Modal, type ModalProps } from '../components/Modal';
 import { DropZone, Field, TagInput } from '../components/ui';
 import { useOverlay } from '../components/overlay';
-import { useImageUrl } from '../components/useImageUrl';
-import { db } from '../db/db';
 import { addImages, cleanupOrphanImages, deleteEntry, saveEntry, type EntryInput } from '../db/actions';
-import { sortCharacters } from '../db/hooks';
+import { useCharacters, useEntry, useImageUrl } from '../db/hooks';
 import { JOURNAL_TAG_SUGGESTIONS } from '../lib/gamedata';
 import { formatDate, fullName, todayISO } from '../lib/logic';
 
@@ -30,8 +27,8 @@ export function JournalForm({
   onClose,
 }: ModalProps & { id?: string; preset?: { characterId?: string; title?: string; tags?: string[]; body?: string } }) {
   const { toast, open } = useOverlay();
-  const chars = useLiveQuery(async () => sortCharacters(await db.characters.toArray()), []);
-  const existing = useLiveQuery(() => (id ? db.journal.get(id) : undefined), [id]);
+  const chars = useCharacters();
+  const existing = useEntry(id);
 
   const [entryId, setEntryId] = useState<string | undefined>(id);
   const [isDraft, setIsDraft] = useState(true);

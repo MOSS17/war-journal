@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router';
 import { Modal, type ModalProps } from '../components/Modal';
 import { Check, DiffDot, Field, Stepper, SwitchRow } from '../components/ui';
 import { PlanIcon } from '../components/icons';
 import { useOverlay } from '../components/overlay';
-import { db } from '../db/db';
 import { createPlan, deletePlan, updatePlan } from '../db/actions';
-import { usePlanContext } from '../db/hooks';
+import { useActivePlans, usePlan, usePlanContext } from '../db/hooks';
 import {
   DIFFICULTY_COLOR,
   DIFFICULTY_LABEL,
@@ -46,11 +44,12 @@ export function PlanForm({
   const { toast, open, celebrate } = useOverlay();
   const navigate = useNavigate();
   const ctx = usePlanContext();
-  const existing = useLiveQuery(() => (id ? db.plans.get(id) : undefined), [id]);
-  const activeCount = useLiveQuery(async () => {
-    const all = await db.plans.where('status').equals('active').toArray();
-    return { total: all.length, tracked: all.filter((p) => p.tracked).length };
-  }, []);
+  const existing = usePlan(id);
+  const activePlans = useActivePlans();
+  const activeCount = useMemo(
+    () => activePlans && { total: activePlans.length, tracked: activePlans.filter((p) => p.tracked).length },
+    [activePlans],
+  );
 
   const [ready, setReady] = useState(false);
   const [type, setType] = useState<PlanType>(preset?.type ?? 'dungeon');

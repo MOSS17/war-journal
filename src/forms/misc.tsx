@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { Modal, type ModalProps } from '../components/Modal';
 import { Field, Segmented, Stepper, SwitchRow, TagInput } from '../components/ui';
 import { Icon } from '../components/icons';
 import { useOverlay, type ModalSpec } from '../components/overlay';
-import { db } from '../db/db';
+import { useCharacters, useCounts, useEvent, useInstance } from '../db/hooks';
 import { addInstance, deleteEvent, deleteInstance, saveEvent, updateInstance } from '../db/actions';
 import { downloadJson, exportAll, importAll, parseBackup, resetAll } from '../db/backup';
 import { MAX_LEVEL } from '../lib/gamedata';
@@ -67,7 +66,8 @@ const QUICK: { key: string; label: string; help: string; icon: ReactNode; spec: 
 
 export function QuickAdd({ onClose }: ModalProps) {
   const { open } = useOverlay();
-  const main = useLiveQuery(async () => (await db.characters.toArray()).find((c) => c.isMain && c.status === 'active') ?? null, []);
+  const chars = useCharacters();
+  const main = useMemo(() => chars && (chars.find((c) => c.isMain && c.status === 'active') ?? null), [chars]);
   const first = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     first.current?.focus();
@@ -120,7 +120,7 @@ const SIZES: InstanceSize[] = [5, 10, 20, 40];
 export function InstanceForm({ id, onClose }: ModalProps & { id?: string }) {
   const { toast, open } = useOverlay();
   const navigate = useNavigate();
-  const existing = useLiveQuery(() => (id ? db.instances.get(id) : undefined), [id]);
+  const existing = useInstance(id);
   const [ready, setReady] = useState(!id);
   const [name, setName] = useState('');
   const [kind, setKind] = useState<InstanceKind>('dungeon');
@@ -344,7 +344,7 @@ export function InstanceForm({ id, onClose }: ModalProps & { id?: string }) {
 
 export function EventForm({ id, onClose }: ModalProps & { id?: string }) {
   const { toast, open } = useOverlay();
-  const existing = useLiveQuery(() => (id ? db.events.get(id) : undefined), [id]);
+  const existing = useEvent(id);
   const [ready, setReady] = useState(!id);
   const [title, setTitle] = useState('');
   const [hasDate, setHasDate] = useState(true);
@@ -463,13 +463,7 @@ export function EventForm({ id, onClose }: ModalProps & { id?: string }) {
 
 export function DataModal({ onClose }: ModalProps) {
   const { toast, open } = useOverlay();
-  const counts = useLiveQuery(async () => ({
-    characters: await db.characters.count(),
-    plans: await db.plans.count(),
-    journal: await db.journal.count(),
-    images: await db.images.count(),
-    library: await db.library.count(),
-  }), []);
+  const counts = useCounts();
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
