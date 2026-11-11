@@ -1,7 +1,7 @@
 // The Supabase client and the player's session. Every visitor plays as an
 // anonymous user, created the first time they save something.
 import { useSyncExternalStore } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type User } from '@supabase/supabase-js';
 
 const url = import.meta.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined;
 const key = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined;
@@ -13,40 +13,63 @@ export const supabase = createClient(url, key);
 
 // ---------- Session ----------
 
+/** Who is playing. `email` is set once an anonymous account has been saved. */
+export interface Account {
+  id: string;
+  anonymous: boolean;
+  email: string | null;
+}
+
 /** undefined until the stored session has been read; null for a visitor with no account yet. */
-let userId: string | null | undefined;
+let account: Account | null | undefined;
 const listeners = new Set<() => void>();
 
-function setUser(id: string | null) {
-  if (id === userId) return;
-  userId = id;
+function toAccount(user: User | null | undefined): Account | null {
+  if (!user) return null;
+  return { id: user.id, anonymous: user.is_anonymous ?? !user.email, email: user.email || null };
+}
+
+function setAccount(next: Account | null) {
+  if (
+    next?.id === account?.id &&
+    next?.anonymous === account?.anonymous &&
+    next?.email === account?.email &&
+    (next === null) === (account === null)
+  )
+    return;
+  account = next;
   for (const l of listeners) l();
 }
 
-supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user.id ?? null));
+supabase.auth.onAuthStateChange((_event, session) => setAccount(toAccount(session?.user)));
 
 /** Resolves once the stored session (if any) has been read. */
 export const sessionReady: Promise<string | null> = supabase.auth
   .getSession()
   .then(({ data }) => {
-    setUser(data.session?.user.id ?? null);
-    return userId ?? null;
+    setAccount(toAccount(data.session?.user));
+    return account?.id ?? null;
   })
   .catch(() => {
-    setUser(null);
+    setAccount(null);
     return null;
   });
 
-export const currentUserId = () => userId;
+export const currentUserId = () => (account === undefined ? undefined : (account?.id ?? null));
+export const currentAccount = () => account;
+
+const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => listeners.delete(l);
+};
+
+/** The current account, null for a visitor, undefined while loading. */
+export function useAccount(): Account | null | undefined {
+  return useSyncExternalStore(subscribe, () => account);
+}
 
 export function useUserId(): string | null | undefined {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-    () => userId,
-  );
+  return useSyncExternalStore(subscribe, currentUserId);
 }
 
 let signingIn: Promise<string> | null = null;
@@ -60,7 +83,7 @@ export async function ensureUser(): Promise<string> {
     .signInAnonymously()
     .then(({ data: d, error }) => {
       if (error || !d.user) throw new SaveError('Could not start your journal. Check your connection and try again.', error);
-      setUser(d.user.id);
+      setAccount(toAccount(d.user));
       return d.user.id;
     })
     .finally(() => {

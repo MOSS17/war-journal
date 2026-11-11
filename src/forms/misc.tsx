@@ -5,6 +5,7 @@ import { Field, Segmented, Stepper, SwitchRow, TagInput } from '../components/ui
 import { Icon } from '../components/icons';
 import { useOverlay, type ModalSpec } from '../components/overlay';
 import { useCharacters, useCounts, useEvent, useInstance } from '../db/hooks';
+import { useAccount } from '../db/supabase';
 import { addInstance, deleteEvent, deleteInstance, saveEvent, updateInstance } from '../db/actions';
 import { downloadJson, exportAll, importAll, parseBackup, resetAll } from '../db/backup';
 import { MAX_LEVEL } from '../lib/gamedata';
@@ -464,6 +465,7 @@ export function EventForm({ id, onClose }: ModalProps & { id?: string }) {
 export function DataModal({ onClose }: ModalProps) {
   const { toast, open } = useOverlay();
   const counts = useCounts();
+  const account = useAccount();
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -504,8 +506,10 @@ export function DataModal({ onClose }: ModalProps) {
     <Modal title="Backup & data" eyebrow="Your data" onClose={onClose} size="narrow">
       <div className="mb">
         <p className="muted">
-          Your journal is saved online to an account tied to this browser; screenshots stay in this browser for now. Export a
-          backup file now and then to keep your own copy, or to move to another browser or computer.
+          {account && !account.anonymous
+            ? `Your journal is saved to your account (${account.email}); screenshots stay in this browser for now.`
+            : 'Your journal is saved online, but only this browser can open it until you save your account. Screenshots stay in this browser for now.'}{' '}
+          Export a backup file now and then to keep your own copy.
         </p>
         {counts && (
           <p className="help tab">

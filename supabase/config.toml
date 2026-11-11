@@ -226,7 +226,8 @@ enabled = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# On, like the hosted project: saving an account sends a code to confirm the email.
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # If enabled, users will need to provide their current password to change their password, unless
@@ -248,6 +249,17 @@ otp_expiry = 3600
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
+
+# Sign-in and save-your-account emails carry both a link and the 6-digit code,
+# so a link opened on another device isn't a dead end. Paste the same files
+# into the hosted project's Auth > Emails > Templates.
+[auth.email.template.magic_link]
+subject = "Your War Journal sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.email_change]
+subject = "Save your War Journal"
+content_path = "./supabase/templates/email_change.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

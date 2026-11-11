@@ -14,7 +14,7 @@ npx supabase start  # local Supabase stack (needs Docker)
 npm run db:env      # point the dev server at the local stack
 npm run dev         # http://localhost:5173
 npm test            # game logic tests
-npm run test:db     # data layer and access tests against the local stack
+npm run test:db     # data layer, account and access tests against the local stack (emails land in Mailpit, http://127.0.0.1:54324)
 npm run build       # typecheck + production build into dist/
 ```
 
@@ -60,6 +60,7 @@ Plan and decisions: [accounts and cloud storage plan](https://claude.ai/artifact
 
 - **Schema** (`supabase/migrations/`): `records` holds every player object as JSON, keyed by `(user_id, kind, id)`, with row-level security so each user only reaches their own rows. `apply_changes(changes)` writes a batch in one transaction; `replace_records(rows)` swaps all of a player's records at once (restore, start over). `instance_catalog` and `event_catalog` hold the seeded content, readable by anyone. `profiles` has one row per user. The private `screenshots` bucket keeps files under `<user_id>/`.
 - **App data layer** (`src/db/`): `store.ts` reads each kind through TanStack Query, merges the catalogs (`src/lib/catalog.ts`), saves through `apply_changes` with an instant update that rolls back on failure, and refreshes from Realtime when another tab (like the Glance view) or device changes something. `actions.ts` runs the pure mutations in `src/lib/mutations.ts` one at a time. `supabase.ts` holds the client and the session.
+- **Accounts** (`src/db/account.ts`, `src/forms/AccountForms.tsx`): email only, by magic link or the 6-digit code in the same email (templates in `supabase/templates/`). Saving an anonymous account attaches the email to the same user, so nothing moves. Signing in from a browser with an anonymous journal offers to copy it in (the account's rows win). Saved accounts can sign out or delete themselves (`delete_my_account()`). Anonymous players see a save reminder after their first character, first plan or entry, and every fifth visit, until they dismiss it three times.
 - **Old browser journals:** on load, `localImport.ts` copies a browser-only journal up once if the account is empty, and keeps the local copy.
 - **New game content:** edit `src/data/*.json`, then `npm run db:catalog` writes a migration that upserts it.
 - **Hosted project:** created through the Vercel Marketplace. Apply new migrations with `npx supabase db push --remote "$POSTGRES_URL_NON_POOLING"` before deploying code that needs them. Only the `NEXT_PUBLIC_` URL and anon key reach the browser.

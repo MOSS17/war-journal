@@ -4,6 +4,8 @@ import { Mark } from './icons';
 import { Skyline, type SkylineVariant } from './Skyline';
 import { useOverlay } from './overlay';
 import { Icon } from './icons';
+import { SaveReminder } from './SaveReminder';
+import { useAccount } from '../db/supabase';
 
 const NAV = [
   { to: '/', label: 'War Board', end: true },
@@ -99,9 +101,37 @@ export function Page({
       </header>
       <NavBar />
       <main className="page" id="main">
+        <SaveReminder />
         {children}
       </main>
     </>
+  );
+}
+
+/** Where the player's journal is saved, with the matching account action. */
+function AccountStatus() {
+  const { open } = useOverlay();
+  const account = useAccount();
+  if (account === undefined) return null;
+  if (account === null)
+    return (
+      <button type="button" className="linkbtn" onClick={() => open({ kind: 'account', step: 'signin' })}>
+        Sign in
+      </button>
+    );
+  if (account.anonymous)
+    return (
+      <span className="row-gap" style={{ gap: 8 }}>
+        <span>Not saved</span>
+        <button type="button" className="linkbtn" onClick={() => open({ kind: 'account', step: 'save' })}>
+          Save your account
+        </button>
+      </span>
+    );
+  return (
+    <button type="button" className="linkbtn" onClick={() => open({ kind: 'account' })}>
+      Saved as {account.email}
+    </button>
   );
 }
 
@@ -115,6 +145,7 @@ export function Footer() {
         is not affiliated with or endorsed by Blizzard.
       </p>
       <div className="row-gap">
+        <AccountStatus />
         <a
           href="/glance"
           className="linkbtn"
