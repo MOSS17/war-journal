@@ -16,6 +16,8 @@ export type ModalSpec =
   | { kind: 'instance'; id?: string }
   | { kind: 'event'; id?: string }
   | { kind: 'data' }
+  | { kind: 'account'; step?: 'save' | 'signin' }
+  | { kind: 'carryOver' }
   | {
       kind: 'confirm';
       title: string;

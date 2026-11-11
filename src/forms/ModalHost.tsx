@@ -6,6 +6,7 @@ import { JournalForm } from './JournalForm';
 import { LibraryForm } from './LibraryForm';
 import { InstanceProgressForm } from './InstanceProgressForm';
 import { ConfirmModal, DataModal, EventForm, InstanceForm, QuickAdd } from './misc';
+import { AccountModal, CarryOverModal } from './AccountForms';
 
 export function ModalHost() {
   const { modal: m, modalKey: key, close } = useOverlay();
@@ -31,6 +32,10 @@ export function ModalHost() {
       return <EventForm key={key} id={m.id} onClose={close} />;
     case 'data':
       return <DataModal key={key} onClose={close} />;
+    case 'account':
+      return <AccountModal key={key} step={m.step} onClose={close} />;
+    case 'carryOver':
+      return <CarryOverModal key={key} onClose={close} />;
     case 'confirm':
       return <ConfirmModal key={key} {...m} onClose={close} />;
   }

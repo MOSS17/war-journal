@@ -12,6 +12,8 @@ import { Library } from './screens/Library';
 import { Glance } from './screens/Glance';
 import { useLiveUpdates } from './db/store';
 import { importLocalData } from './db/localImport';
+import { pendingCarryOver } from './db/account';
+import { useAccount } from './db/supabase';
 import { SaveError } from './db/supabase';
 
 const KEYS: Record<string, ModalSpec> = {
@@ -60,8 +62,17 @@ function Shortcuts() {
  * when a save doesn't reach the server (the form stays open with its input).
  */
 function CloudSync() {
-  const { toast } = useOverlay();
+  const { toast, open } = useOverlay();
+  const account = useAccount();
   useLiveUpdates();
+  // After signing in (by code, or by a link that reloaded the page), offer this browser's anonymous journal.
+  const savedId = account && !account.anonymous ? account.id : null;
+  useEffect(() => {
+    if (!savedId || window.location.pathname === '/glance') return;
+    pendingCarryOver()
+      .then((c) => c && open({ kind: 'carryOver' }))
+      .catch(() => {});
+  }, [savedId, open]);
   useEffect(() => {
     importLocalData()
       .then((r) => r && toast(`Your journal now lives in the cloud (${r.records} records moved). This browser keeps its copy.`))

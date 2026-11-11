@@ -123,6 +123,11 @@ describe('records', () => {
     expect(none.error).not.toBeNull();
   });
 
+  it('turns visitors who are not signed in away from deleting accounts', async () => {
+    const { error } = await client().rpc('delete_my_account');
+    expect(error).not.toBeNull();
+  });
+
   it('turns visitors who are not signed in away from writes', async () => {
     const { error } = await client().rpc('apply_changes', { changes: [char('x', 'Nobody')] });
     expect(error).not.toBeNull();
