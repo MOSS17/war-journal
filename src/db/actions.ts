@@ -1,10 +1,9 @@
 // The app's writes. Each one loads the rows its pure mutation needs
 // (src/lib/mutations.ts), runs it, and saves the resulting changes in one
 // call (src/db/store.ts). Writes run one at a time, so each sees the last.
-import { db } from './db';
+import { localScreenshotsToUpload, uploadImage } from './images';
 import { commit, loadSnapshot } from './store';
-import type { Character, LibraryItem, Objective, TonightTask, WarPlan } from '../lib/types';
-import { nowISO, uid } from '../lib/logic';
+import type { Character, ImageRecord, LibraryItem, Objective, TonightTask, WarPlan } from '../lib/types';
 import * as m from '../lib/mutations';
 import { PLAN_KINDS, type Kind, type Mutation, type Snapshot } from '../lib/mutations';
 
@@ -86,34 +85,25 @@ export const deleteEntry = (id: string) => run(['journal'], (s) => m.deleteEntry
 export const logMoment = (text: string, character?: Character) =>
   run(['journal'], (s) => m.logMoment(s, text, character));
 
-// Screenshots stay browser-only until they move to file storage (phase 5).
+// ---------- Screenshots ----------
 
+/** Resizes and uploads screenshots, then saves their records. Returns their ids, in order. */
 export async function addImages(files: File[]): Promise<string[]> {
-  const ids: string[] = [];
-  for (const f of files) {
-    if (!f.type.startsWith('image/')) continue;
-    const id = uid();
-    await db.images.add({ id, blob: f, type: f.type, createdAt: nowISO() });
-    ids.push(id);
-  }
-  return ids;
+  const images: ImageRecord[] = [];
+  for (const f of files) if (f.type.startsWith('image/')) images.push(await uploadImage(f));
+  return run([], () => m.addImages(images));
 }
 
-export async function deleteImages(ids: string[]) {
-  await db.images.bulkDelete(ids);
-}
+export const deleteImages = (ids: string[]) => run([], () => ({ changes: ids.map((id) => ({ kind: 'images' as const, op: 'delete' as const, id })), value: undefined }));
 
-export async function getImage(id: string) {
-  return db.images.get(id);
-}
+/** Deletes screenshots that no journal entry points at any more. */
+export const cleanupOrphanImages = () => run(['journal', 'images'], (s) => m.removeOrphanImages(s));
 
-/** Deletes stored screenshots that no journal entry points at any more. */
-export async function cleanupOrphanImages() {
-  await db.transaction('rw', db.journal, db.images, async () => {
-    const used = new Set((await db.journal.toArray()).flatMap((e) => e.imageIds));
-    const all = await db.images.toCollection().primaryKeys();
-    await db.images.bulkDelete(all.filter((id) => !used.has(id)));
-  });
+/** Uploads screenshots this browser kept from before they moved to Storage. Returns how many. */
+export async function uploadLocalScreenshots(): Promise<number> {
+  const images = await localScreenshotsToUpload();
+  if (images.length) await run([], () => m.addImages(images));
+  return images.length;
 }
 
 // ---------- Library ----------

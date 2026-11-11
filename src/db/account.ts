@@ -6,9 +6,10 @@ import type { AuthError } from '@supabase/supabase-js';
 import { db, getMeta, setMeta } from './db';
 import { currentAccount, sessionReady, supabase } from './supabase';
 import { fetchEventCatalog, fetchInstanceCatalog, fetchRecords, queryClient, type RecordKind, type StoredRecord } from './store';
-import { BACKUP_FORMAT, BACKUP_VERSION, type Backup } from './backup';
+import { BACKUP_FORMAT, BACKUP_VERSION, blobToDataUrl, type Backup } from './backup';
+import { downloadImage, listImageFiles, removeImageFiles, uploadImage } from './images';
 import { mergeEvents, mergeInstances, type Override } from '../lib/catalog';
-import type { GameEvent, Instance } from '../lib/types';
+import type { GameEvent, ImageRecord, Instance } from '../lib/types';
 
 export type EmailResult =
   | { ok: true }
@@ -77,8 +78,7 @@ export async function deleteAccount(): Promise<void> {
   await sessionReady;
   const me = currentAccount();
   if (!me) return;
-  const files = await supabase.storage.from('screenshots').list(me.id, { limit: 1000 });
-  if (files.data?.length) await supabase.storage.from('screenshots').remove(files.data.map((f) => `${me.id}/${f.name}`));
+  await removeImageFiles(me.id, await listImageFiles(me.id));
   const { error } = await supabase.rpc('delete_my_account');
   if (error) throw new Error('Couldn’t delete your account. Check your connection and try again.');
   await supabase.auth.signOut({ scope: 'local' });
@@ -102,6 +102,12 @@ async function stashAnonymousJournal(): Promise<void> {
   const me = currentAccount();
   if (!me?.anonymous) return;
   const records = await fetchRecords(me.id);
+  // Signing in loses access to this account's files, so keep its screenshots in the browser until the choice is made.
+  for (const r of records.filter((x) => x.kind === 'images')) {
+    const img = r.data as ImageRecord;
+    const blob = await downloadImage(me.id, img.id);
+    if (blob) await db.images.put({ id: img.id, blob, type: img.type, createdAt: img.createdAt });
+  }
   await setMeta(CARRY_KEY, records.length ? ({ fromUserId: me.id, at: new Date().toISOString(), records } satisfies CarryOver) : null);
 }
 
@@ -132,25 +138,38 @@ export async function copyCarryOver(c: CarryOver): Promise<number> {
   if (!me || me.anonymous) throw new Error('Sign in first.');
   const have = new Set((await fetchRecords(me.id)).map((r) => `${r.kind}/${r.id}`));
   const missing = c.records.filter((r) => !have.has(`${r.kind}/${r.id}`));
+  // Screenshots go up under the account first, from the browser copies kept at sign-in.
+  for (const r of missing.filter((x) => x.kind === 'images')) {
+    const local = await db.images.get(r.id);
+    if (local) r.data = await uploadImage(local.blob, r.id, local.createdAt);
+  }
   for (let i = 0; i < missing.length; i += 1000) {
     const changes = missing.slice(i, i + 1000).map((r) => ({ op: 'put', kind: r.kind, id: r.id, row: r.data }));
     const { error } = await supabase.rpc('apply_changes', { changes });
     if (error) throw new Error('Couldn’t copy your journal. Check your connection and try again.');
   }
+  await db.images.bulkDelete(c.records.filter((r) => r.kind === 'images').map((r) => r.id));
   await setMeta(CARRY_KEY, null);
   await queryClient.invalidateQueries({ queryKey: ['kind'] });
   return missing.length;
 }
 
 export async function dropCarryOver(): Promise<void> {
+  const stash = await getMeta<CarryOver | null>(CARRY_KEY, null);
+  if (stash) await db.images.bulkDelete(stash.records.filter((r) => r.kind === 'images').map((r) => r.id));
   await setMeta(CARRY_KEY, null);
 }
 
 /** The left-behind journal as a backup file, so the player can keep a copy before deciding. */
 export async function carryOverBackup(c: CarryOver): Promise<Backup> {
   const tables: Backup['tables'] = {};
-  for (const r of c.records) (tables[r.kind] ??= []).push(r.data);
+  for (const r of c.records) if (r.kind !== 'images') (tables[r.kind] ??= []).push(r.data);
   tables.instances = mergeInstances(await fetchInstanceCatalog(), (tables.instances ?? []) as Override<Instance>[]);
   tables.events = mergeEvents(await fetchEventCatalog(), (tables.events ?? []) as Override<GameEvent>[]);
-  return { format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: c.at, tables, images: [] };
+  const images: Backup['images'] = [];
+  for (const r of c.records.filter((x) => x.kind === 'images')) {
+    const local = await db.images.get(r.id);
+    if (local) images.push({ id: r.id, type: local.type, createdAt: local.createdAt, dataUrl: await blobToDataUrl(local.blob) });
+  }
+  return { format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: c.at, tables, images };
 }

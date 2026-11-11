@@ -42,8 +42,12 @@ export function importLocalData(): Promise<ImportResult | null> {
 
     const tables: Partial<Record<RecordKind, unknown[]>> = {};
     for (const k of RECORD_KINDS) {
+      // Screenshots are uploaded separately (uploadLocalScreenshots), once their journal is up.
+      if (k === 'images') continue;
       tables[k] = k === 'meta' ? (await db.meta.toArray()).filter((r) => r.key !== DONE_KEY && r.key !== 'seedVersion') : await db.table(k).toArray();
     }
+    // An empty seeded table was never seeded, rather than cleared by the player: leave the catalog alone.
+    for (const k of ['instances', 'events'] as const) if (!tables[k]?.length) delete tables[k];
     // An up-to-date local database had every seeded row, so a missing one was removed by the player.
     const seedVersion = await getMeta<number>('seedVersion', 0);
     const rows = await recordsFromTables(tables, { hideMissing: seedVersion >= SEED_VERSION });

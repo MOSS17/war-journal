@@ -9,6 +9,7 @@ import {
   deleteCharacter,
   deleteEntry,
   deletePlan,
+  removeOrphanImages,
   saveProgress,
   setInstanceProgress,
   setRetired,
@@ -290,5 +291,23 @@ describe('other writes', () => {
     const { changes } = deleteEntry(snap({ journal: [entry] }), 'j');
     expect(deletes(changes, 'images')).toEqual(['i1', 'i2']);
     expect(deletes(changes, 'journal')).toEqual(['j']);
+  });
+
+  it('removes screenshots no journal entry points at', () => {
+    const entry: JournalEntry = {
+      id: 'j',
+      date: TODAY,
+      title: '',
+      body: '',
+      imageIds: ['kept'],
+      tags: [],
+      draft: false,
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    const img = (id: string) => ({ id, type: 'image/webp', createdAt: NOW });
+    const { changes, value } = removeOrphanImages(snap({ journal: [entry], images: [img('kept'), img('stray')] }));
+    expect(value).toEqual(['stray']);
+    expect(deletes(changes, 'images')).toEqual(['stray']);
   });
 });

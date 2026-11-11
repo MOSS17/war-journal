@@ -39,6 +39,7 @@ export function JournalForm({
   const [body, setBody] = useState(preset?.body ?? '');
   const [tags, setTags] = useState<string[]>(preset?.tags ?? []);
   const [imageIds, setImageIds] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [level, setLevel] = useState<number | undefined>();
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [tried, setTried] = useState(false);
@@ -252,16 +253,22 @@ export function JournalForm({
               />
             ))}
             <DropZone
+              label={uploading ? 'Uploading…' : undefined}
               onFiles={async (files) => {
-                const ids = await addImages(files);
-                if (ids.length) {
-                  dirty.current = true;
-                  setImageIds((cur) => [...cur, ...ids]);
+                setUploading(true);
+                try {
+                  const ids = await addImages(files);
+                  if (ids.length) {
+                    dirty.current = true;
+                    setImageIds((cur) => [...cur, ...ids]);
+                  }
+                } finally {
+                  setUploading(false);
                 }
               }}
             />
           </div>
-          <span className="help">Your own screenshots. They stay in this browser and go into your backup file.</span>
+          <span className="help">Your own screenshots, resized to 1920 px. Saved with your journal and in your backup file.</span>
         </div>
         <Field label="Tags" htmlFor="jf-tags">
           <TagInput id="jf-tags" tags={tags} onChange={touch(setTags)} suggestions={JOURNAL_TAG_SUGGESTIONS} />

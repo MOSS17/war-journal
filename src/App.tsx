@@ -12,6 +12,7 @@ import { Library } from './screens/Library';
 import { Glance } from './screens/Glance';
 import { useLiveUpdates } from './db/store';
 import { importLocalData } from './db/localImport';
+import { uploadLocalScreenshots } from './db/actions';
 import { pendingCarryOver } from './db/account';
 import { useAccount } from './db/supabase';
 import { SaveError } from './db/supabase';
@@ -76,7 +77,11 @@ function CloudSync() {
   useEffect(() => {
     importLocalData()
       .then((r) => r && toast(`Your journal now lives in the cloud (${r.records} records moved). This browser keeps its copy.`))
-      .catch((e) => console.error('Moving the local journal failed', e));
+      .catch((e) => console.error('Moving the local journal failed', e))
+      // Then screenshots this browser kept from before they moved to Storage (not from the Glance window).
+      .then(() => (window.location.pathname === '/glance' ? 0 : uploadLocalScreenshots()))
+      .then((n) => n && toast(`${n} screenshot${n === 1 ? '' : 's'} uploaded to your journal`))
+      .catch((e) => console.error('Uploading local screenshots failed', e));
   }, [toast]);
   useEffect(() => {
     const onRejection = (e: PromiseRejectionEvent) => {

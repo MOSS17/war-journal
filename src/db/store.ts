@@ -4,7 +4,7 @@
 // cache when another tab or device changes something.
 import { useEffect } from 'react';
 import { QueryClient, useQuery } from '@tanstack/react-query';
-import { db } from './db';
+import { removeImageFiles } from './images';
 import { currentUserId, ensureUser, SaveError, sessionReady, supabase, useUserId } from './supabase';
 import type { GameEvent, Instance } from '../lib/types';
 import {
@@ -23,9 +23,10 @@ export const queryClient = new QueryClient({
   },
 });
 
-/** Kinds stored as player records. Screenshots stay in the browser for now. */
-export type RecordKind = Exclude<Kind, 'images'>;
+/** Kinds stored as player records: all of them. Screenshot files live in Storage beside their records. */
+export type RecordKind = Kind;
 export const RECORD_KINDS: RecordKind[] = [
+  'images',
   'characters',
   'professions',
   'instances',
@@ -110,7 +111,6 @@ export async function loadSnapshot(kinds: Kind[]): Promise<Snapshot> {
   const s: Snapshot = {};
   await Promise.all(
     kinds.map(async (k) => {
-      if (k === 'images') throw new Error('Screenshots are not part of a snapshot');
       (s as Record<Kind, unknown>)[k] = await queryClient.ensureQueryData({
         queryKey: kindKey(uid, k),
         queryFn: () => fetchKind(uid, k),
@@ -142,11 +142,8 @@ async function toWire(c: Change & { kind: RecordKind }): Promise<WireChange> {
   return { op: 'delete', kind: c.kind, id: c.id };
 }
 
-/** Saves changes: screenshots to the browser, everything else to Supabase in one transaction. */
-export async function commit(changes: Change[]): Promise<void> {
-  const images = changes.filter((c) => c.kind === 'images');
-  const records = changes.filter((c): c is Change & { kind: RecordKind } => c.kind !== 'images');
-
+/** Saves changes to Supabase in one transaction. Deleted screenshots lose their files too. */
+export async function commit(records: Change[]): Promise<void> {
   if (records.length) {
     await sessionReady;
     const visitorUid = currentUserId() ?? null;
@@ -174,10 +171,9 @@ export async function commit(changes: Change[]): Promise<void> {
       throw new SaveError("Couldn't save. Check your connection and try again.", error);
     }
     for (const k of touched) void queryClient.invalidateQueries({ queryKey: kindKey(uid, k) });
+    const goneImages = records.filter((c) => c.kind === 'images' && c.op === 'delete').map((c) => (c as { id: string }).id);
+    if (goneImages.length) await removeImageFiles(uid, goneImages).catch((e) => console.warn('Leftover screenshot files', e));
   }
-
-  const gone = images.filter((c) => c.op === 'delete').map((c) => (c as { id: string }).id);
-  if (gone.length) await db.images.bulkDelete(gone);
 }
 
 /** Replaces all of the player's records in one transaction (restore, start over, moving local data up). */

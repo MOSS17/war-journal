@@ -14,7 +14,7 @@ import type {
   Objective,
   Profession,
   RunStatus,
-  StoredImage,
+  ImageRecord,
   TonightTask,
   WarPlan,
 } from './types';
@@ -30,7 +30,7 @@ export interface RowOf {
   progress: InstanceProgress;
   plans: WarPlan;
   journal: JournalEntry;
-  images: StoredImage;
+  images: ImageRecord;
   library: LibraryItem;
   events: GameEvent;
   tonight: TonightTask;
@@ -470,6 +470,20 @@ export function saveEntry(s: Snapshot, id: string | undefined, input: EntryInput
 export function deleteEntry(s: Snapshot, id: string): Mutation {
   const e = find(s, 'journal', id);
   return { changes: [...(e?.imageIds ?? []).map((i) => del('images', i)), del('journal', id)], value: undefined };
+}
+
+/** Screenshot records for files that were just uploaded. */
+export function addImages(images: ImageRecord[]): Mutation<string[]> {
+  return { changes: images.map((i) => put('images', i)), value: images.map((i) => i.id) };
+}
+
+/** Deletes screenshots that no journal entry points at any more. Needs: journal, images. */
+export function removeOrphanImages(s: Snapshot): Mutation<string[]> {
+  const used = new Set(rows(s, 'journal').flatMap((e) => e.imageIds));
+  const orphans = rows(s, 'images')
+    .map((i) => i.id)
+    .filter((id) => !used.has(id));
+  return { changes: orphans.map((id) => del('images', id)), value: orphans };
 }
 
 /** A one-line moment from the glance view, kept as a draft to finish later. Needs: journal. */

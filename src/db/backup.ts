@@ -1,7 +1,8 @@
 // Backup files: everything the player has, as one JSON file, and restoring
 // one in place of what's on the server now.
 import { db } from './db';
-import { currentUserId, sessionReady } from './supabase';
+import { currentUserId, ensureUser, sessionReady } from './supabase';
+import { downloadImage, listImageFiles, removeImageFiles, uploadImage } from './images';
 import {
   asRecords,
   fetchEventCatalog,
@@ -12,7 +13,7 @@ import {
   replaceAll,
   type RecordKind,
 } from './store';
-import type { GameEvent, Instance, StoredImage } from '../lib/types';
+import type { GameEvent, ImageRecord, Instance } from '../lib/types';
 import {
   isUntouchedEvent,
   isUntouchedInstance,
@@ -38,7 +39,7 @@ export interface Backup {
   images: { id: string; type: string; createdAt: string; dataUrl: string }[];
 }
 
-async function blobToDataUrl(blob: Blob): Promise<string> {
+export async function blobToDataUrl(blob: Blob): Promise<string> {
   const buf = new Uint8Array(await blob.arrayBuffer());
   let bin = '';
   for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
@@ -54,15 +55,22 @@ function dataUrlToBlob(url: string): Blob {
   return new Blob([bytes], { type: m[1] });
 }
 
+/** Everything the player has, screenshots included, as one backup file. */
 export async function exportAll(): Promise<Backup> {
   await sessionReady;
   const uid = currentUserId() ?? null;
   const tables: Backup['tables'] = {};
-  for (const k of RECORD_KINDS) tables[k] = await fetchKind(uid, k);
-  const imgs = await db.images.toArray();
-  const images = await Promise.all(
-    imgs.map(async (i) => ({ id: i.id, type: i.type, createdAt: i.createdAt, dataUrl: await blobToDataUrl(i.blob) })),
-  );
+  for (const k of RECORD_KINDS) if (k !== 'images') tables[k] = await fetchKind(uid, k);
+  // Screenshots: the ones in Storage, plus any this browser still holds that haven't been uploaded.
+  const stored = new Map((await fetchKind(uid, 'images')).map((r) => [r.id, r.createdAt]));
+  for (const local of await db.images.toArray()) if (!stored.has(local.id)) stored.set(local.id, local.createdAt);
+  const used = new Set((tables.journal as { imageIds: string[] }[]).flatMap((e) => e.imageIds));
+  const images: Backup['images'] = [];
+  for (const [id, createdAt] of stored) {
+    if (!used.has(id)) continue;
+    const blob = await downloadImage(uid, id);
+    if (blob) images.push({ id, type: blob.type, createdAt, dataUrl: await blobToDataUrl(blob) });
+  }
   return { format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: new Date().toISOString(), tables, images };
 }
 
@@ -90,11 +98,13 @@ export async function recordsFromTables(tables: Backup['tables'], { hideMissing 
   const [instanceCatalog, eventCatalog] = await Promise.all([fetchInstanceCatalog(), fetchEventCatalog()]);
   const out: ReturnType<typeof asRecords>[number][] = [];
   for (const k of RECORD_KINDS) {
+    // Screenshots travel as files (backup.images) and get their records when they're uploaded.
+    if (k === 'images') continue;
     let rows = tables[k];
     if (!Array.isArray(rows)) {
-      // A table missing from the file is empty; for seeded kinds that means "nothing changed".
+      // A missing table is empty; for seeded kinds it says nothing, so the catalog stands as is.
       if (k !== 'instances' && k !== 'events') continue;
-      rows = hideMissing ? [] : k === 'instances' ? instanceCatalog : eventCatalog;
+      rows = k === 'instances' ? instanceCatalog : eventCatalog;
     }
     if (k === 'instances') {
       rows = overridesFor((rows as Instance[]).map((r) => normalizeInstance(r)), instanceCatalog, isUntouchedInstance, { hideMissing });
@@ -108,25 +118,31 @@ export async function recordsFromTables(tables: Backup['tables'], { hideMissing 
   return out;
 }
 
-/** Replaces everything on the server, and the screenshots in this browser, with the backup's contents. */
+/**
+ * Replaces everything with the backup's contents. Its screenshots are uploaded
+ * first, then all records are swapped in one transaction, then files the
+ * backup doesn't have are removed.
+ */
 export async function importAll(backup: Backup): Promise<void> {
-  const images: StoredImage[] = (backup.images ?? []).map((i) => ({
-    id: i.id,
-    type: i.type,
-    createdAt: i.createdAt,
-    blob: dataUrlToBlob(i.dataUrl),
-  }));
-  await replaceAll(await recordsFromTables(backup.tables, { hideMissing: (backup.version ?? 1) >= 2 }));
-  await db.transaction('rw', db.images, async () => {
-    await db.images.clear();
-    if (images.length) await db.images.bulkAdd(images);
-  });
+  const uid = await ensureUser();
+  const before = await listImageFiles(uid);
+  const uploaded: ImageRecord[] = [];
+  for (const i of backup.images ?? []) uploaded.push(await uploadImage(dataUrlToBlob(i.dataUrl), i.id, i.createdAt));
+  const rows = await recordsFromTables(backup.tables, { hideMissing: (backup.version ?? 1) >= 2 });
+  await replaceAll([...rows, ...asRecords('images', uploaded)]);
+  const keep = new Set(uploaded.map((i) => i.id));
+  await removeImageFiles(uid, before.filter((id) => !keep.has(id)));
+  await db.images.clear();
 }
 
 /** Deletes everything the player has. The instance list and dates come back from the catalog. */
 export async function resetAll(): Promise<void> {
   await sessionReady;
-  if (currentUserId()) await replaceAll([]);
+  const uid = currentUserId();
+  if (uid) {
+    await replaceAll([]);
+    await removeImageFiles(uid, await listImageFiles(uid));
+  }
   await db.images.clear();
   await queryClient.invalidateQueries({ queryKey: ['kind'] });
 }
