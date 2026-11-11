@@ -1,8 +1,9 @@
 import { useEffect, useRef, type FormEvent, type ReactNode } from 'react';
+import { Rivets } from './ui';
 
 /**
- * A centred dialog over a dimmed page; a full-height sheet on phones.
- * Esc or × closes. Enter in a single-line field submits.
+ * A framed dialog with a title plaque, centred over a dimmed page; a full-height sheet on phones.
+ * Esc or the red X closes. Enter in a single-line field submits.
  */
 export function Modal({
   title,
@@ -37,6 +38,7 @@ export function Modal({
     onSubmit?.();
   };
 
+  const isMenu = size === 'menu';
   return (
     <dialog
       ref={ref}
@@ -47,21 +49,22 @@ export function Modal({
         onClose();
       }}
     >
-      <form onSubmit={submit} style={{ display: 'contents' }}>
-        {size !== 'menu' && (
-          <div className="mh">
-            {header ?? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-                <h2 id={titleId}>{title}</h2>
-              </div>
-            )}
-            <button type="button" className="iconbtn" aria-label="Close" onClick={onClose}>
-              ×
+      {!isMenu && (
+        <h2 id={titleId} className="plaque">
+          {title}
+        </h2>
+      )}
+      <form onSubmit={submit} className={`modal-frame ${isMenu ? 'modal-tip' : 'card'}`}>
+        {!isMenu && <Rivets top={false} />}
+        {!isMenu && (
+          <div className={`mh${header || eyebrow ? '' : ' bare'}`}>
+            {header ?? (eyebrow ? <span className="eyebrow">{eyebrow}</span> : null)}
+            <button type="button" className="xbtn" aria-label="Close" onClick={onClose}>
+              <span aria-hidden="true">X</span>
             </button>
           </div>
         )}
-        {(size === 'menu' || header) && <h2 id={titleId} className="sr-only">{title}</h2>}
+        {isMenu && <h2 id={titleId} className="sr-only">{title}</h2>}
         {children}
         {footer && <div className="mf between">{footer}</div>}
       </form>

@@ -4,9 +4,9 @@ import type { ClassName, PlanType } from '../lib/types';
 export function Mark({ size = 32, muted = false }: { size?: number; muted?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 56 56" aria-hidden="true">
-      {!muted && <path d="M28 2 L52 14 V36 L28 54 L4 36 V14Z" fill="#b8322a" />}
-      <path d="M15 42 C9 30 12 17 22 10 C19 20 20 30 25 39 Z" fill={muted ? 'rgba(255,230,210,.7)' : '#f1e2c6'} />
-      <path d="M41 42 C47 30 44 17 34 10 C37 20 36 30 31 39 Z" fill={muted ? 'rgba(255,230,210,.7)' : '#f1e2c6'} />
+      {!muted && <path d="M28 3 L51 14.5 V35.5 L28 53 L5 35.5 V14.5Z" fill="#9c2015" stroke="#c9a24a" strokeWidth="2.5" strokeLinejoin="round" />}
+      <path d="M15 42 C9 30 12 17 22 10 C19 20 20 30 25 39 Z" fill={muted ? 'rgba(255,230,210,.7)' : '#f3e4c0'} />
+      <path d="M41 42 C47 30 44 17 34 10 C37 20 36 30 31 39 Z" fill={muted ? 'rgba(255,230,210,.7)' : '#f3e4c0'} />
     </svg>
   );
 }
@@ -28,8 +28,8 @@ export function ClassGlyph({ cls, size = 38 }: { cls: ClassName; size?: number }
     <svg width={size} height={size} viewBox="0 0 60 60" aria-hidden="true">
       <path
         d={CLASS_PATHS[cls]}
-        fill={stroked ? 'none' : '#e8d3a8'}
-        stroke={stroked ? '#e8d3a8' : 'none'}
+        fill={stroked ? 'none' : '#d8c08a'}
+        stroke={stroked ? '#d8c08a' : 'none'}
         strokeWidth={stroked ? 4 : 0}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -102,12 +102,4 @@ const PLAN_PATHS: Record<PlanType, string> = {
 
 export function PlanIcon({ type, size = 20 }: { type: PlanType; size?: number }) {
   return <Stroke d={PLAN_PATHS[type]} size={size} />;
-}
-
-export function Diamond({ size = 10 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true">
-      <path d="M6 0 L12 6 L6 12 L0 6Z" fill="#fff6ec" />
-    </svg>
-  );
 }

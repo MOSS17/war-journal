@@ -138,7 +138,7 @@ function ProgressFormInner({
                 <span className="sr-only">Character</span>
                 <select
                   className="inp"
-                  style={{ height: 32, fontSize: 13, padding: '0 34px 0 10px', backgroundPosition: 'right 10px center', width: 'auto' }}
+                  style={{ fontSize: 15, width: 'auto' }}
                   value={char.id}
                   onChange={(e) => onPick(e.target.value)}
                 >
@@ -153,7 +153,6 @@ function ProgressFormInner({
             ) : (
               <span className="eyebrow">{char.firstName} · after tonight's session</span>
             )}
-            <h2 style={{ fontFamily: 'var(--disp)', fontWeight: 600, fontSize: 26, color: 'var(--bone-hi)' }}>Update progress</h2>
           </div>
         </div>
       }
@@ -199,7 +198,7 @@ function ProgressFormInner({
                   <label className="lab" htmlFor="up-xp">
                     Experience into level
                   </label>
-                  <span className="tab" style={{ fontWeight: 700, color: '#f2a46e' }}>
+                  <span className="disp tab" style={{ color: 'var(--gold)' }}>
                     {xp}%
                   </span>
                 </div>

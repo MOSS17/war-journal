@@ -1,25 +1,32 @@
 import { Link } from 'react-router';
 import type { Character, GameEvent, JournalEntry, WarPlan } from '../lib/types';
-import { DIFFICULTY_COLOR, daysBetween, formatDate, fullName, type PlanProgress } from '../lib/logic';
-import { Bar, DiffDot } from './ui';
+import { DIFFICULTY_COLOR, DIFFICULTY_LABEL, daysBetween, formatDate, fullName, type PlanProgress } from '../lib/logic';
 import { Mark } from './icons';
 import { ParchGrain } from './Skyline';
 import { useImageUrl } from './useImageUrl';
 
+/**
+ * A tracked plan, drawn like the in-game quest tracker: "[34] Scarlet Monastery" in its
+ * difficulty colour, with objective lines below. Done objectives turn green.
+ */
 export function PlanMini({ plan, prog }: { plan: WarPlan; prog: PlanProgress }) {
-  const c = DIFFICULTY_COLOR[prog.difficulty];
+  const lvl = prog.level ?? plan.level;
+  const lines = prog.objectives.length
+    ? prog.objectives.map((o) => ({ key: o.id, text: o.text, done: o.done }))
+    : [{ key: 'progress', text: prog.label, done: prog.done }];
   return (
-    <Link to={`/plans?p=${plan.id}`} className="planmini">
-      <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <DiffDot d={prog.difficulty} />
-        <span className="grow" style={{ fontWeight: 600 }}>
-          {plan.title}
-        </span>
-        <span className="tab" style={{ fontSize: 13, color: 'var(--ash)' }}>
-          {prog.label}
-        </span>
+    <Link to={`/plans?p=${plan.id}`} className="tq">
+      <span className="tq-title" style={{ color: DIFFICULTY_COLOR[prog.difficulty] }}>
+        {lvl ? <span className="tab">[{lvl}] </span> : null}
+        {plan.title}
+        <span className="sr-only"> · {DIFFICULTY_LABEL[prog.difficulty]}</span>
       </span>
-      <Bar pct={prog.pct} kind="plain" color={c} label={`${plan.title} progress`} />
+      {lines.map((l) => (
+        <span key={l.key} className={`tq-obj${l.done ? ' done' : ''}`}>
+          - {l.text}
+          {l.done && <span className="sr-only"> (done)</span>}
+        </span>
+      ))}
     </Link>
   );
 }
@@ -47,7 +54,7 @@ export function JournalPage({
   const shot = entry.imageIds[0];
   return (
     <article
-      className="parch"
+      className={`parch${compact ? ' edged' : ''}`}
       style={{
         padding: compact ? '30px 34px' : '30px 34px 26px',
         display: 'flex',
@@ -57,12 +64,13 @@ export function JournalPage({
       }}
     >
       <ParchGrain />
+      <span className="tack" aria-hidden="true" />
       <span className="seal" aria-hidden="true">
         <Mark size={24} muted />
       </span>
       <div style={{ position: 'relative', flex: '999 1 380px', display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', alignItems: 'baseline', paddingRight: 60 }}>
-          <span className="ink" style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase' }}>
+          <span className="eyebrow" style={{ letterSpacing: '.14em' }}>
             {compact && 'From the journal · '}
             {formatDate(entry.date)}
             {entry.level ? ` · Level ${entry.level}` : ''}
@@ -73,7 +81,7 @@ export function JournalPage({
             </span>
           )}
         </div>
-        <h2 style={{ fontSize: 28, lineHeight: 1.1, textWrap: 'balance' }}>
+        <h2 style={{ fontSize: 28, lineHeight: 1.15, textWrap: 'balance' }}>
           {onEdit ? (
             <button
               type="button"
