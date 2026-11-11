@@ -114,6 +114,15 @@ describe('records', () => {
     expect(data).toHaveLength(1);
   });
 
+  it("replace_records only ever clears the caller's own rows", async () => {
+    const { error } = await b.c.rpc('replace_records', { rows: [] });
+    expect(error).toBeNull();
+    const { rows } = await db.query(`select count(*)::int n from public.records where user_id = $1`, [a.id]);
+    expect(rows[0].n).toBeGreaterThan(0);
+    const none = await client().rpc('replace_records', { rows: [] });
+    expect(none.error).not.toBeNull();
+  });
+
   it('turns visitors who are not signed in away from writes', async () => {
     const { error } = await client().rpc('apply_changes', { changes: [char('x', 'Nobody')] });
     expect(error).not.toBeNull();

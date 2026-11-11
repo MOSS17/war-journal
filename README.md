@@ -9,17 +9,23 @@ A personal companion for WoW Forever: track every character's progress, set war 
 
 ```sh
 npm install
-npm run dev        # http://localhost:5173
-npm test           # game logic and database tests
-npm run build      # typecheck + production build into dist/
+vercel env pull     # writes the Supabase keys to .env.local (git-ignored)
+npx supabase start  # local Supabase stack (needs Docker)
+npm run db:env      # point the dev server at the local stack
+npm run dev         # http://localhost:5173
+npm test            # game logic tests
+npm run test:db     # data layer and access tests against the local stack
+npm run build       # typecheck + production build into dist/
 ```
+
+Without `npm run db:env`, the dev server uses the hosted project from `.env.local`.
 
 ## How it works
 
-- **Static app, no backend.** Vite, React 19, React Router 8 (declarative mode), TypeScript 7.
+- **Static app on Supabase.** Vite, React 19, React Router 8 (declarative mode), TypeScript 7, TanStack Query.
 - **Look:** Classic UI, the classic game interface style (leather frames, gold plaques, red buttons, tooltip panels, parchment). All styling is in `src/styles/app.css`; see [DESIGN.md](DESIGN.md).
-- **Storage:** IndexedDB through Dexie (`src/db/db.ts`). All data stays in the browser. Use **Backup & data** in the footer to export everything (screenshots included) as one JSON file, or to import it again.
-- **Seed data:** `src/data/instances.json` (29 dungeons, 3 raids) and `src/data/events.json` (countdown dates). They're loaded on first run. To ship new content, edit the file and bump `SEED_VERSION` in `src/db/db.ts`: new rows are added, and existing seeded rows get their reference data (territory, Horde access, quests) refreshed, while your notes, bosses, wings, links and renames are kept.
+- **Storage:** Supabase (see Database below). Every visitor gets an anonymous account the first time they save. Screenshots still live in the browser (IndexedDB through Dexie) until they move to file storage. Use **Backup & data** in the footer to export everything as one JSON file, or to restore one.
+- **Seed data:** `src/data/instances.json` (29 dungeons, 3 raids) and `src/data/events.json` (countdown dates) are loaded into shared catalog tables. A player's edits to a seeded row are stored as their own override; the catalog keeps the reference data (territory, Horde access, quests) current.
 - **Game logic** (`src/lib/logic.ts`, tested): difficulty colours (trivial → deadly), "fits my level", money, and plan progress.
 - **Plan sync** (`src/db/actions.ts`): marking instance progress, levels, skills or gold completes matching war plans. Ticking a wing on a plan writes back to that instance's progress.
 
@@ -48,18 +54,19 @@ npm run build      # typecheck + production build into dist/
 
 Every game-describing record has `source` (manual / api / addon) and `updatedAt`, ready for a phase 2 importer.
 
-## Database (Supabase, in progress)
+## Database (Supabase)
 
-Player data is moving from IndexedDB to Supabase ([plan](https://claude.ai/artifact/P7zWqxwTAoUJDCZMJB3d88)). The app doesn't use it yet.
+Plan and decisions: [accounts and cloud storage plan](https://claude.ai/artifact/P7zWqxwTAoUJDCZMJB3d88).
 
-- `supabase/migrations/`: the schema. `records` holds every player object as JSON, keyed by `(user_id, kind, id)`, with row-level security so each user only reaches their own rows. `apply_changes(changes)` writes a batch in one transaction. `instance_catalog` and `event_catalog` hold the seeded game content, readable by anyone. `profiles` has one row per user. The private `screenshots` bucket keeps files under `<user_id>/`.
-- New game content: edit `src/data/*.json`, then `npm run db:catalog` writes a migration that upserts it.
-- Local stack (needs Docker): `npx supabase start`, then `npm run test:db` runs the access tests (two players, each sees only their own data). `npx supabase stop` when done.
-- The hosted project was created through the Vercel Marketplace; `vercel env pull` writes its keys to `.env.local` (git-ignored). Only the `NEXT_PUBLIC_` URL and anon key are meant for the browser.
+- **Schema** (`supabase/migrations/`): `records` holds every player object as JSON, keyed by `(user_id, kind, id)`, with row-level security so each user only reaches their own rows. `apply_changes(changes)` writes a batch in one transaction; `replace_records(rows)` swaps all of a player's records at once (restore, start over). `instance_catalog` and `event_catalog` hold the seeded content, readable by anyone. `profiles` has one row per user. The private `screenshots` bucket keeps files under `<user_id>/`.
+- **App data layer** (`src/db/`): `store.ts` reads each kind through TanStack Query, merges the catalogs (`src/lib/catalog.ts`), saves through `apply_changes` with an instant update that rolls back on failure, and refreshes from Realtime when another tab (like the Glance view) or device changes something. `actions.ts` runs the pure mutations in `src/lib/mutations.ts` one at a time. `supabase.ts` holds the client and the session.
+- **Old browser journals:** on load, `localImport.ts` copies a browser-only journal up once if the account is empty, and keeps the local copy.
+- **New game content:** edit `src/data/*.json`, then `npm run db:catalog` writes a migration that upserts it.
+- **Hosted project:** created through the Vercel Marketplace. Apply new migrations with `npx supabase db push --remote "$POSTGRES_URL_NON_POOLING"` before deploying code that needs them. Only the `NEXT_PUBLIC_` URL and anon key reach the browser.
 
 ## Deploy
 
-`vercel.json` serves the app as a static SPA. Run `npx vercel` to deploy a preview, or `npx vercel --prod` for production. Each visitor's data stays in their own browser.
+`vercel.json` serves the app as a static SPA. Run `npx vercel` to deploy a preview, or `npx vercel --prod` for production. Merging to `main` deploys to production. Player data lives in Supabase.
 
 ## Legal
 

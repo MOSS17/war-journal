@@ -487,7 +487,7 @@ export function DataModal({ onClose }: ModalProps) {
       open({
         kind: 'confirm',
         title: 'Replace everything with this backup?',
-        body: `The backup from ${new Date(backup.exportedAt).toLocaleString()} has ${n} character${n === 1 ? '' : 's'}. Everything in this browser now is replaced. Export first if you want to keep it.`,
+        body: `The backup from ${new Date(backup.exportedAt).toLocaleString()} has ${n} character${n === 1 ? '' : 's'}. Everything in your journal now is replaced. Export first if you want to keep it.`,
         confirmLabel: 'Replace my data',
         back: { kind: 'data' },
         onConfirm: async () => {
@@ -504,8 +504,8 @@ export function DataModal({ onClose }: ModalProps) {
     <Modal title="Backup & data" eyebrow="Your data" onClose={onClose} size="narrow">
       <div className="mb">
         <p className="muted">
-          Everything lives in this browser only. Export a backup file now and then, and import it to move to another browser or
-          computer.
+          Your journal is saved online to an account tied to this browser; screenshots stay in this browser for now. Export a
+          backup file now and then to keep your own copy, or to move to another browser or computer.
         </p>
         {counts && (
           <p className="help tab">
@@ -549,7 +549,7 @@ export function DataModal({ onClose }: ModalProps) {
               open({
                 kind: 'confirm',
                 title: 'Delete all your data?',
-                body: 'Everything in this browser is wiped. This can’t be undone unless you have a backup file.',
+                body: 'Your whole journal is deleted. This can’t be undone unless you have a backup file.',
                 confirmLabel: 'Delete everything',
                 back: { kind: 'data' },
                 onConfirm: async () => {

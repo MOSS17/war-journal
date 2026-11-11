@@ -20,7 +20,7 @@ import {
 import { instanceObjectiveLinks } from './logic';
 import type { Character, JournalEntry, LibraryItem, WarPlan } from './types';
 import { ACCOUNT } from './types';
-import { seedInstanceRows } from '../db/db';
+import { seedInstanceRows } from './catalog';
 
 const NOW = '2026-11-10T20:00:00.000Z';
 const TODAY = '2026-11-10';

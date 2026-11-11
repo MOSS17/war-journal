@@ -1,11 +1,12 @@
 // The app's writes. Each one loads the rows its pure mutation needs
-// (src/lib/mutations.ts), runs it, and applies the resulting changes in a
-// single transaction. This file is the only place that writes to storage.
+// (src/lib/mutations.ts), runs it, and saves the resulting changes in one
+// call (src/db/store.ts). Writes run one at a time, so each sees the last.
 import { db } from './db';
+import { commit, loadSnapshot } from './store';
 import type { Character, LibraryItem, Objective, TonightTask, WarPlan } from '../lib/types';
 import { nowISO, uid } from '../lib/logic';
 import * as m from '../lib/mutations';
-import { PLAN_KINDS, type Change, type Kind, type Mutation, type Snapshot } from '../lib/mutations';
+import { PLAN_KINDS, type Kind, type Mutation, type Snapshot } from '../lib/mutations';
 
 export {
   progressId,
@@ -21,34 +22,17 @@ export {
   type ProgressUpdate,
 } from '../lib/mutations';
 
-async function loadSnapshot(kinds: Kind[]): Promise<Snapshot> {
-  const s: Snapshot = {};
-  await Promise.all(
-    kinds.map(async (k) => {
-      (s as Record<Kind, unknown[]>)[k] = await db.table(k).toArray();
-    }),
-  );
-  return s;
-}
+let queue: Promise<unknown> = Promise.resolve();
 
-/** Writes a list of changes in order. */
-export async function applyChanges(changes: Change[]): Promise<void> {
-  if (!changes.length) return;
-  await db.transaction('rw', db.tables, async () => {
-    for (const c of changes) {
-      if (c.op === 'put') await db.table(c.kind).put(c.row);
-      else await db.table(c.kind).delete(c.id);
-    }
-  });
-}
-
-/** Loads a snapshot of `kinds`, runs the mutation and applies its changes, all in one transaction. */
-async function run<R>(kinds: Kind[], fn: (s: Snapshot) => Mutation<R>): Promise<R> {
-  return db.transaction('rw', db.tables, async () => {
+/** Loads a snapshot of `kinds`, runs the mutation and saves its changes, after any write already running. */
+function run<R>(kinds: Kind[], fn: (s: Snapshot) => Mutation<R>): Promise<R> {
+  const next = queue.then(async () => {
     const result = fn(await loadSnapshot(kinds));
-    await applyChanges(result.changes);
+    await commit(result.changes);
     return result.value;
   });
+  queue = next.catch(() => undefined);
+  return next;
 }
 
 // ---------- Characters ----------
