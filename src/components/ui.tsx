@@ -130,7 +130,7 @@ export function Bar({
       aria-valuenow={Math.round(pct * 100)}
       aria-label={label}
     >
-      <span style={{ width: w, background: color }} />
+      <span className="fill" style={{ width: w, background: color }} />
       {value !== undefined && (
         <span className="val tab" aria-hidden="true">
           {value}

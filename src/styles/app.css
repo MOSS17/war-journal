@@ -636,7 +636,7 @@ p {
   border-radius: 2px;
   overflow: hidden;
 }
-.track > span {
+.track > .fill {
   display: block;
   height: 100%;
   background: var(--progress);
@@ -649,7 +649,7 @@ p {
   border-radius: 3px;
   box-shadow: inset 0 0 0 1px #000;
 }
-.track.xp > span {
+.track.xp > .fill {
   background: var(--xp);
 }
 /* 20 segment ticks, like the experience bar. */
@@ -666,7 +666,7 @@ p {
   border-radius: 3px;
   box-shadow: inset 0 0 0 1px #000;
 }
-.track.skill > span {
+.track.skill > .fill {
   background: var(--skill);
 }
 .track .val {
