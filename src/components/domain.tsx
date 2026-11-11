@@ -3,7 +3,7 @@ import type { Character, GameEvent, JournalEntry, WarPlan } from '../lib/types';
 import { DIFFICULTY_COLOR, DIFFICULTY_LABEL, daysBetween, formatDate, fullName, type PlanProgress } from '../lib/logic';
 import { Mark } from './icons';
 import { ParchGrain } from './Skyline';
-import { useImageUrl } from './useImageUrl';
+import { useImageUrl } from '../db/hooks';
 
 /**
  * A tracked plan, drawn like the in-game quest tracker: "[34] Scarlet Monastery" in its

@@ -1,12 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Page } from '../components/Shell';
 import { EmptyState, Rivets } from '../components/ui';
 import { Icon } from '../components/icons';
 import { useOverlay } from '../components/overlay';
-import { db } from '../db/db';
-import { useLibrary } from '../db/hooks';
+import { useInstances, useLibrary, usePlans } from '../db/hooks';
 import { togglePin } from '../db/actions';
 import type { LibraryItem } from '../lib/types';
 
@@ -28,8 +26,10 @@ export function Library() {
   const { open } = useOverlay();
   const [params, setParams] = useSearchParams();
   const items = useLibrary();
-  const instances = useLiveQuery(async () => new Map((await db.instances.toArray()).map((i) => [i.id, i.name])), []);
-  const plans = useLiveQuery(async () => new Map((await db.plans.toArray()).map((p) => [p.id, p.title])), []);
+  const instanceList = useInstances();
+  const planList = usePlans();
+  const instances = useMemo(() => instanceList && new Map(instanceList.map((i) => [i.id, i.name])), [instanceList]);
+  const plans = useMemo(() => planList && new Map(planList.map((p) => [p.id, p.title])), [planList]);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const q = params.get('q') ?? '';

@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Page } from '../components/Shell';
 import { Check, ClassDot, Rivets, Segmented, StatusPill } from '../components/ui';
 import { Icon } from '../components/icons';
 import { ParchGrain } from '../components/Skyline';
 import { useOverlay } from '../components/overlay';
-import { db } from '../db/db';
 import { toggleQuest, updateInstance } from '../db/actions';
-import { useInstances, usePlanContext } from '../db/hooks';
+import { useInstances, useLibrary, usePlanContext } from '../db/hooks';
 import {
   DIFFICULTY_COLOR,
   DIFFICULTY_LABEL,
@@ -255,7 +253,8 @@ function InstanceDetail({
 }) {
   const { open } = useOverlay();
   const today = todayISO();
-  const links = useLiveQuery(() => db.library.where('instanceId').equals(inst.id).toArray(), [inst.id]);
+  const library = useLibrary();
+  const links = useMemo(() => library?.filter((l) => l.instanceId === inst.id), [library, inst.id]);
   const [notes, setNotes] = useState(inst.notes);
   useEffect(() => {
     setNotes(inst.notes);

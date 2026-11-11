@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, type ModalProps } from '../components/Modal';
 import { Field, Segmented, SwitchRow, TagInput } from '../components/ui';
 import { useOverlay } from '../components/overlay';
-import { db } from '../db/db';
-import { deleteLibraryItem, saveLibraryItem } from '../db/actions';
+import { useActivePlans, useInstances, useLibraryCategories, useLibraryItem } from '../db/hooks';
 import { LIBRARY_CATEGORIES } from '../lib/gamedata';
+import { deleteLibraryItem, saveLibraryItem } from '../db/actions';
 
 function guessName(url: string): string {
   try {
@@ -30,13 +29,12 @@ export function LibraryForm({
   onClose,
 }: ModalProps & { id?: string; preset?: { kind?: 'link' | 'note'; instanceId?: string; planId?: string } }) {
   const { toast, open } = useOverlay();
-  const existing = useLiveQuery(() => (id ? db.library.get(id) : undefined), [id]);
-  const instances = useLiveQuery(async () => (await db.instances.toArray()).sort((a, b) => a.name.localeCompare(b.name)), []);
-  const plans = useLiveQuery(async () => (await db.plans.where('status').equals('active').toArray()).sort((a, b) => a.title.localeCompare(b.title)), []);
-  const cats = useLiveQuery(async () => {
-    const used = (await db.library.toArray()).map((l) => l.category);
-    return [...new Set([...LIBRARY_CATEGORIES, ...used])];
-  }, []);
+  const existing = useLibraryItem(id);
+  const allInstances = useInstances();
+  const instances = useMemo(() => allInstances && [...allInstances].sort((a, b) => a.name.localeCompare(b.name)), [allInstances]);
+  const active = useActivePlans();
+  const plans = useMemo(() => active && [...active].sort((a, b) => a.title.localeCompare(b.title)), [active]);
+  const cats = useLibraryCategories();
 
   const [ready, setReady] = useState(!id);
   const [kind, setKind] = useState<'link' | 'note'>(preset?.kind ?? 'link');

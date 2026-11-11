@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Modal, type ModalProps } from '../components/Modal';
 import { Field, Stepper, SwitchRow } from '../components/ui';
 import { ClassGlyph, Icon } from '../components/icons';
 import { useOverlay } from '../components/overlay';
-import { db, getMeta } from '../db/db';
+import { useCharacter, useCharacters, useMeta } from '../db/hooks';
 import { addCharacter, deleteCharacter, setMain, setRetired, updateCharacter } from '../db/actions';
 import { CLASSES, CLASS_COLOR, MAX_LEVEL, RACES, RACE_CLASSES, RULESETS } from '../lib/gamedata';
 import { fullName, validName } from '../lib/logic';
@@ -14,8 +13,9 @@ import { useNavigate } from 'react-router';
 export function CharacterForm({ id, onClose }: ModalProps & { id?: string }) {
   const { toast, open } = useOverlay();
   const navigate = useNavigate();
-  const existing = useLiveQuery(() => (id ? db.characters.get(id) : undefined), [id]);
-  const all = useLiveQuery(() => db.characters.toArray(), []);
+  const existing = useCharacter(id);
+  const all = useCharacters();
+  const lastRuleset = useMeta<Ruleset | null>('lastRuleset', null);
   const main = all?.find((c) => c.isMain && c.status === 'active');
 
   const [first, setFirst] = useState('');
@@ -42,17 +42,15 @@ export function CharacterForm({ id, onClose }: ModalProps & { id?: string }) {
       setGuild(existing.guild ?? '');
       setMakeMain(existing.isMain);
       setLoaded(true);
-    } else if (!id && all) {
-      getMeta<Ruleset | null>('lastRuleset', null).then((r) => {
-        if (r) {
-          setRuleset(r);
-          setRulesetRemembered(true);
-        }
-      });
+    } else if (!id && all && lastRuleset !== undefined) {
+      if (lastRuleset) {
+        setRuleset(lastRuleset);
+        setRulesetRemembered(true);
+      }
       setMakeMain(!all.some((c) => c.isMain && c.status === 'active'));
       setLoaded(true);
     }
-  }, [id, existing, all, loaded]);
+  }, [id, existing, all, lastRuleset, loaded]);
 
   const allowed = race ? RACE_CLASSES[race] : CLASSES;
   const pickRace = (r: Race) => {

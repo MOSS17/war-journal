@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Modal, type ModalProps } from '../components/Modal';
 import { Check, EmptyState, Field, Segmented, Stepper } from '../components/ui';
 import { Icon } from '../components/icons';
 import { useOverlay } from '../components/overlay';
-import { db } from '../db/db';
 import { progressId, resolveStatus, setInstanceProgress } from '../db/actions';
-import { usePlanContext } from '../db/hooks';
+import { useActivePlans, useInstance, useInstanceProgress, usePlanContext } from '../db/hooks';
 import { fullName, isLocked, levelRange, planProgress, todayISO } from '../lib/logic';
 import type { RunStatus } from '../lib/types';
 import { ACCOUNT } from '../lib/types';
@@ -18,21 +16,19 @@ export function InstanceProgressForm({
 }: ModalProps & { instanceId: string; characterId?: string }) {
   const { toast, celebrate, open } = useOverlay();
   const ctx = usePlanContext();
-  const inst = useLiveQuery(() => db.instances.get(instanceId), [instanceId]);
+  const inst = useInstance(instanceId);
   const active = useMemo(() => ctx?.characters.filter((c) => c.status === 'active') ?? [], [ctx]);
   const [charId, setCharId] = useState(characterId ?? '');
   const char = active.find((c) => c.id === charId) ?? active[0];
   // Tagged with the character so a stale result is never loaded into the form.
-  const loaded = useLiveQuery(
-    async () => (char ? { charId: char.id, rec: await db.progress.get(progressId(char.id, instanceId)) } : undefined),
-    [char?.id, instanceId],
-  );
-  const plans = useLiveQuery(
-    async () =>
-      (await db.plans.where('status').equals('active').toArray()).filter(
+  const loaded = useInstanceProgress(char?.id, instanceId);
+  const activePlans = useActivePlans();
+  const plans = useMemo(
+    () =>
+      activePlans?.filter(
         (p) => p.target.instanceId === instanceId && (p.ownerId === char?.id || (p.ownerId === ACCOUNT && char?.isMain)),
       ),
-    [instanceId, char?.id],
+    [activePlans, instanceId, char?.id, char?.isMain],
   );
 
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
