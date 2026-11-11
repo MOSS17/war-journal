@@ -1,10 +1,7 @@
 // Every read the screens make. Each hook builds on `useKind` (src/db/store.ts),
 // which loads one whole kind of row from Supabase; the rest is filtering and
 // sorting in memory (the data set is small).
-import { useEffect, useMemo, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from './db';
-import { getImage } from './actions';
+import { useMemo } from 'react';
 import { useKind, type RecordKind } from './store';
 import type { Character, Profession } from '../lib/types';
 import { LIBRARY_CATEGORIES } from '../lib/gamedata';
@@ -154,31 +151,12 @@ export function useCounts() {
   const plans = useKind('plans');
   const journal = useKind('journal');
   const library = useKind('library');
-  const images = useLiveQuery(() => db.images.count(), []);
-  return characters && plans && journal && library && images !== undefined
-    ? { characters: characters.length, plans: plans.length, journal: journal.length, images, library: library.length }
+  const images = useKind('images');
+  return characters && plans && journal && library && images
+    ? { characters: characters.length, plans: plans.length, journal: journal.length, images: images.length, library: library.length }
     : undefined;
 }
 
 // ---------- Screenshots ----------
 
-/** An object URL for a stored screenshot, revoked when the component unmounts. */
-export function useImageUrl(id: string | undefined): string | undefined {
-  const [url, setUrl] = useState<string>();
-  useEffect(() => {
-    if (!id) return;
-    let alive = true;
-    let made: string | undefined;
-    getImage(id).then((img) => {
-      if (!alive || !img) return;
-      made = URL.createObjectURL(img.blob);
-      setUrl(made);
-    });
-    return () => {
-      alive = false;
-      if (made) URL.revokeObjectURL(made);
-      setUrl(undefined);
-    };
-  }, [id]);
-  return url;
-}
+export { useImageUrl } from './images';

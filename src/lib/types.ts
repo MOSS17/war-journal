@@ -198,6 +198,18 @@ export interface JournalEntry {
   updatedAt: ISOTime;
 }
 
+/** A screenshot's record. The file itself is in Storage at screenshots/<user id>/<id>. */
+export interface ImageRecord {
+  id: string;
+  /** Media type of the stored file, e.g. image/webp. */
+  type: string;
+  createdAt: ISOTime;
+  width?: number;
+  height?: number;
+  bytes?: number;
+}
+
+/** A screenshot kept in the browser by older versions of the app. */
 export interface StoredImage {
   id: string;
   blob: Blob;
