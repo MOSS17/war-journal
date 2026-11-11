@@ -48,6 +48,15 @@ npm run build      # typecheck + production build into dist/
 
 Every game-describing record has `source` (manual / api / addon) and `updatedAt`, ready for a phase 2 importer.
 
+## Database (Supabase, in progress)
+
+Player data is moving from IndexedDB to Supabase ([plan](https://claude.ai/artifact/P7zWqxwTAoUJDCZMJB3d88)). The app doesn't use it yet.
+
+- `supabase/migrations/`: the schema. `records` holds every player object as JSON, keyed by `(user_id, kind, id)`, with row-level security so each user only reaches their own rows. `apply_changes(changes)` writes a batch in one transaction. `instance_catalog` and `event_catalog` hold the seeded game content, readable by anyone. `profiles` has one row per user. The private `screenshots` bucket keeps files under `<user_id>/`.
+- New game content: edit `src/data/*.json`, then `npm run db:catalog` writes a migration that upserts it.
+- Local stack (needs Docker): `npx supabase start`, then `npm run test:db` runs the access tests (two players, each sees only their own data). `npx supabase stop` when done.
+- The hosted project was created through the Vercel Marketplace; `vercel env pull` writes its keys to `.env.local` (git-ignored). Only the `NEXT_PUBLIC_` URL and anon key are meant for the browser.
+
 ## Deploy
 
 `vercel.json` serves the app as a static SPA. Run `npx vercel` to deploy a preview, or `npx vercel --prod` for production. Each visitor's data stays in their own browser.
