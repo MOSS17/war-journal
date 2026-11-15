@@ -39,6 +39,7 @@ Without `npm run db:env`, the dev server uses the hosted project from `.env.loca
 | `/plans?p=…` | War Plans grouped by character |
 | `/journal` | Journal pages, drafts, character and tag filters |
 | `/library` | Links and notes, search, pins |
+| `/guide?tab=…` | Field Guide for new players: classes, professions and Horde leveling zones, each a short answer plus links out (`src/lib/guides.ts`) |
 | `/glance` | 420px second-screen view (footer link pops it out) |
 
 **Shortcuts:** N quick add · J journal entry · P war plan · U update progress · L save to Library · / search.

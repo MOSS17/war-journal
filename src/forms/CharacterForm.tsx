@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, type ModalProps } from '../components/Modal';
 import { Field, Stepper, SwitchRow } from '../components/ui';
 import { ClassGlyph, Icon } from '../components/icons';
+import { CLASS_GUIDES } from '../lib/guides';
 import { useOverlay } from '../components/overlay';
 import { useCharacter, useCharacters, useMeta } from '../db/hooks';
 import { addCharacter, deleteCharacter, setMain, setRetired, updateCharacter } from '../db/actions';
@@ -248,6 +249,7 @@ export function CharacterForm({ id, onClose }: ModalProps & { id?: string }) {
               );
             })}
           </div>
+          {cls && <span className="help">{CLASS_GUIDES[cls].oneLiner}</span>}
           {race ? (
             <span className="help">Greyed out: not available to {race === 'Undead' ? 'the Undead' : `${race}s`}.</span>
           ) : (

@@ -1,5 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router';
 import { Page } from '../components/Shell';
+import { CLASS_GUIDES } from '../lib/guides';
+import { GuideLinks } from '../components/GuideLinks';
 import { Avatar, Bar, DiffDot, EmptyState, Frame, Money, Rivets, StatusPill } from '../components/ui';
 import { PlanMini } from '../components/domain';
 import { useOverlay } from '../components/overlay';
@@ -192,7 +194,16 @@ function CharacterDetail({ c }: { c: Character }) {
 
       <div className="detail-grid">
         <div className="grid-auto detail-main">
-          <Frame title="Professions" titleId="cd-prof" style={{ gap: 14 }}>
+          <Frame
+            title="Professions"
+            titleId="cd-prof"
+            style={{ gap: 14 }}
+            right={
+              <Link to="/guide?tab=professions" className="linkbtn">
+                Which to pick?
+              </Link>
+            }
+          >
             {profs.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
                 <p className="muted">No professions logged yet.</p>
@@ -266,6 +277,21 @@ function CharacterDetail({ c }: { c: Character }) {
                 </button>
               ))
             )}
+          </Frame>
+
+          <Frame
+            title={`Playing a ${c.class}`}
+            titleId="cd-class"
+            style={{ gap: 8 }}
+            right={
+              <Link to="/guide" className="linkbtn">
+                Field Guide
+              </Link>
+            }
+          >
+            <p>{CLASS_GUIDES[c.class].oneLiner}</p>
+            <p className="help">Roles: {CLASS_GUIDES[c.class].roles.join(', ')}</p>
+            <GuideLinks links={CLASS_GUIDES[c.class].links} category="Class" />
           </Frame>
         </div>
 

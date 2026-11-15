@@ -230,6 +230,12 @@ function ProgressFormInner({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <span className="eyebrow">Professions</span>
+            <span className="help">
+              Not sure which to pick?{' '}
+              <a href="/guide?tab=professions" target="_blank" rel="noopener">
+                Open the Field Guide
+              </a>
+            </span>
             {list.length === 0 && <span className="help">No professions yet.</span>}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px auto', gap: '10px 8px', alignItems: 'center' }}>
               {list.map((p) => {

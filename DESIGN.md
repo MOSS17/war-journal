@@ -54,6 +54,7 @@ Google Fonts, loaded in `index.html`:
 - **Bars** (`Bar`): `xp` (purple, 20 ticks), `skill` (blue, value centred), `progress` (gold).
 - **Pickers** (`.tiles` / `.tile` / `.ic`): square icon slots with a gold glow when selected. Used for race, class and plan type.
 - **Inputs**: `.inp`, `.step` (red − and +), `.coin`, `.chips`, `.range` (the XP bar with a gold handle), `.cb`, `.sw`. The journal textarea (`.journal-text`) is parchment.
+- **Guide links** (`GuideLinks`, `.guide-links`): an outside link with its host, plus a right-aligned "+ Save" that copies it to the Library. Used on the Field Guide and the character page.
 - **Dialog** (`Modal`): a frame with a title plaque and a red X. The Quick add menu is a tooltip panel.
 
 ## Signature patterns
