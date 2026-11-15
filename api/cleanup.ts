@@ -2,7 +2,7 @@
 // days, with their screenshots. Vercel sends `Authorization: Bearer
 // $CRON_SECRET`; anything else is turned away.
 import { createClient } from '@supabase/supabase-js';
-import { cleanupAnonymous } from '../server/cleanup';
+import { cleanupAnonymous } from '../server/cleanup.js';
 
 export async function GET(request: Request): Promise<Response> {
   const secret = process.env.CRON_SECRET;
