@@ -44,6 +44,8 @@ Without `npm run db:env`, the dev server uses the hosted project from `.env.loca
 | `/guide?tab=…` | Field Guide for new players: classes, professions and Horde leveling zones, each a short answer plus links out (`src/lib/guides.ts`) |
 | `/glance` | 420px second-screen view (footer link pops it out) |
 
+**Tour:** a five-step walk through the nav (`src/components/Tour.tsx`) runs once on the War Board after the first character exists. It's remembered as `meta.tourSeen`, so it follows the account, and replays from the footer's "Take the tour" (`/?tour=1`).
+
 **Shortcuts:** N quick add · J journal entry · P war plan · U update progress · L save to Library · / search.
 
 ## Data model additions beyond the design doc
