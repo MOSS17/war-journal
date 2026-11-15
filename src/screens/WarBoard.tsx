@@ -10,7 +10,8 @@ import { useEvents, useInstances, useJournal, usePlanContext, usePlans, useProfe
 import { addTonightTask, deleteTonightTask, setMain, toggleTonightTask, visibleTonight } from '../db/actions';
 import { DIFFICULTY_COLOR, difficulty, fitsLevel, formatDate, fullName, isLocked, levelRange, planProgress, todayISO } from '../lib/logic';
 import { CLASS_COLOR } from '../lib/gamedata';
-import type { Character } from '../lib/types';
+import type { Character, Instance, InstanceProgress } from '../lib/types';
+import { WhatsNext } from '../components/WhatsNext';
 
 function FirstRun() {
   const { open } = useOverlay();
@@ -46,7 +47,17 @@ function FirstRun() {
   );
 }
 
-function MainCard({ main, others }: { main: Character; others: Character[] }) {
+function MainCard({
+  main,
+  others,
+  instances,
+  progress,
+}: {
+  main: Character;
+  others: Character[];
+  instances: Instance[];
+  progress: InstanceProgress[];
+}) {
   const { open } = useOverlay();
   const profs = useProfessions(main.id, (a, b) => b.skill - a.skill)?.slice(0, 2);
   return (
@@ -79,6 +90,9 @@ function MainCard({ main, others }: { main: Character; others: Character[] }) {
           <Bar pct={main.xpPct / 100} kind="xp" label="Experience" />
         </div>
       )}
+      <div className="tip" style={{ padding: '12px 14px' }}>
+        <WhatsNext c={main} instances={instances} progress={progress} compact />
+      </div>
       {profs && profs.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
           {profs.map((p) => (
@@ -227,7 +241,12 @@ export function WarBoard() {
       <div className="stack">
         <div className="split" style={{ alignItems: 'stretch' }}>
           <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex' }}>
-            <MainCard main={main} others={active.filter((c) => c.id !== main.id)} />
+            <MainCard
+              main={main}
+              others={active.filter((c) => c.id !== main.id)}
+              instances={instances}
+              progress={ctx.progress}
+            />
           </div>
 
           <section className="tracker" aria-labelledby="wb-plans" style={{ flex: '1 1 380px' }}>

@@ -6,7 +6,7 @@
  * minimum zone levels) and points to a guide for everything else.
  * When you re-check a link, update its `checkedOn`.
  */
-import type { ClassName, GuideLink, ISODate, Territory } from './types';
+import type { ClassName, GuideLink, ISODate, Race, Territory } from './types';
 
 export interface FieldLink extends GuideLink {
   /** When someone last opened the page and checked it still says what we claim. */
@@ -287,3 +287,76 @@ export function zoneBracket(minLevel: number): number {
 export function bracketLabel(start: number): string {
   return start === 0 ? 'Levels 1–9' : start === 50 ? 'Levels 50–60' : `Levels ${start}–${start + 9}`;
 }
+
+// ---------- Level unlocks (What's next, gold planner) ----------
+
+export interface LevelUnlock {
+  id: string;
+  level: number;
+  title: string;
+  detail: string;
+  /**
+   * 'reach': happens when you hit the level (shown only before you get there).
+   * 'learn': something you go and buy or train at that level (still shown at that level).
+   */
+  when: 'reach' | 'learn';
+  /** Gold it takes, in copper, when a source states it. */
+  copper?: number;
+  links: FieldLink[];
+}
+
+const GOLD = 10000;
+const FOREVER_WIKI = wiki('Forever', 'WoW Forever on the wiki');
+export const RIDING_GUIDE = tavern('riding', 'Riding guide');
+
+const legacy = (level: number): LevelUnlock => ({
+  id: `legacy-${level}`,
+  level,
+  title: 'Legacy points',
+  detail: 'Reaching 25, 40 and 60 on a class earns account-wide Legacy points to spend at your class trainer.',
+  when: 'reach',
+  links: [FOREVER_WIKI],
+});
+
+/** Sorted by level. Only facts a source states; costs before reputation discounts. */
+export const LEVEL_UNLOCKS: LevelUnlock[] = [
+  legacy(25),
+  legacy(40),
+  {
+    id: 'riding',
+    level: 40,
+    title: 'Learn to ride',
+    detail: 'Apprentice Riding is 100g at your race’s riding trainer, plus 20g for the mount. Honored with your home faction takes 10% off both.',
+    when: 'learn',
+    copper: 120 * GOLD,
+    links: [RIDING_GUIDE],
+  },
+  {
+    id: 'dual-spec',
+    level: 40,
+    title: 'Dual spec',
+    detail: 'Your class trainer sells a second talent setup for 50g, so you can swap between, say, questing and dungeon talents.',
+    when: 'learn',
+    copper: 50 * GOLD,
+    links: [FOREVER_WIKI],
+  },
+  legacy(60),
+  {
+    id: 'journeyman-riding',
+    level: 60,
+    title: 'Fast mount',
+    detail: 'Journeyman Riding is 1,000g, plus 200g for the faster mount.',
+    when: 'learn',
+    copper: 1200 * GOLD,
+    links: [RIDING_GUIDE],
+  },
+];
+
+/** Where each race starts questing. */
+export const START_ZONE: Record<Race, string> = {
+  Orc: 'durotar',
+  Troll: 'durotar',
+  Tauren: 'mulgore',
+  Undead: 'tirisfal-glades',
+  Skyborne: 'zephras-isle',
+};

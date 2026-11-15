@@ -2,6 +2,7 @@ import { Link, Navigate, useParams } from 'react-router';
 import { Page } from '../components/Shell';
 import { CLASS_GUIDES } from '../lib/guides';
 import { GuideLinks } from '../components/GuideLinks';
+import { WhatsNext } from '../components/WhatsNext';
 import { Avatar, Bar, DiffDot, EmptyState, Frame, Money, Rivets, StatusPill } from '../components/ui';
 import { PlanMini } from '../components/domain';
 import { useOverlay } from '../components/overlay';
@@ -194,6 +195,11 @@ function CharacterDetail({ c }: { c: Character }) {
 
       <div className="detail-grid">
         <div className="grid-auto detail-main">
+          {c.status === 'active' && (
+            <Frame title="What's next" titleId="cd-next" style={{ gap: 12 }}>
+              <WhatsNext c={c} instances={instances} progress={ctx.progress} />
+            </Frame>
+          )}
           <Frame
             title="Professions"
             titleId="cd-prof"
