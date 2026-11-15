@@ -124,3 +124,5 @@ export const deleteEvent = (id: string) => run([], () => m.remove('events', id))
 export const addTonightTask = (text: string) => run([], () => m.addTonightTask(text));
 export const toggleTonightTask = (task: TonightTask) => run(['tonight'], (s) => m.toggleTonightTask(s, task));
 export const deleteTonightTask = (id: string) => run([], () => m.remove('tonight', id));
+
+export const setMeta = (key: string, value: unknown) => run([], () => m.setMeta(key, value));

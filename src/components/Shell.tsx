@@ -36,7 +36,7 @@ function NavBar() {
         </Link>
         <nav className={`nav${menu ? ' open' : ''}`} aria-label="Main" id="main-nav">
           {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end}>
+            <NavLink key={n.to} to={n.to} end={n.end} data-tour={n.to}>
               {n.label}
             </NavLink>
           ))}
@@ -157,6 +157,9 @@ export function Footer() {
         >
           Second-screen glance
         </a>
+        <Link to="/?tour=1" className="linkbtn">
+          Take the tour
+        </Link>
         <button type="button" className="linkbtn" onClick={() => open({ kind: 'data' })}>
           Backup &amp; data
         </button>

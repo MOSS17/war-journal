@@ -2544,3 +2544,61 @@ button.notice:hover {
   min-height: 44px;
   margin: -10px 0;
 }
+
+/* ---------- Tour ---------- */
+
+.tour {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  max-width: calc(100vw - 32px);
+}
+.tour.centered {
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  margin: 0 auto;
+  width: auto;
+  max-width: 420px;
+}
+.tour:focus {
+  outline: none;
+}
+.tour h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.tour p {
+  margin: 0;
+}
+.tour .linkbtn {
+  min-height: 44px;
+}
+.tour-arrow {
+  position: absolute;
+  top: -8px;
+  left: calc(50% - 7px);
+  width: 14px;
+  height: 14px;
+  background: var(--tip);
+  border-left: 2px solid var(--tip-edge);
+  border-top: 2px solid var(--tip-edge);
+  transform: rotate(45deg);
+}
+.tour-target {
+  box-shadow: inset 0 0 0 2px var(--gold), 0 0 14px rgba(255, 209, 0, 0.55);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tour {
+    animation: tour-in 0.18s ease-out;
+  }
+}
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}

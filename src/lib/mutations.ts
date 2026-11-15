@@ -581,4 +581,7 @@ export function visibleTonight(tasks: TonightTask[], today = todayISO()): Tonigh
 
 // ---------- Simple deletes ----------
 
+/** Stores a per-player setting in the meta table. */
+export const setMeta = (key: string, value: unknown): Mutation => ({ changes: [put('meta', { key, value })], value: undefined });
+
 export const remove = (kind: Kind, id: string): Mutation => ({ changes: [del(kind, id)], value: undefined });

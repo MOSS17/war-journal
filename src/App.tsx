@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { OverlayProvider, Toasts, useOverlay, type ModalSpec } from './components/overlay';
 import { Footer } from './components/Shell';
 import { ModalHost } from './forms/ModalHost';
+import { Tour } from './components/Tour';
 import { WarBoard } from './screens/WarBoard';
 import { Characters } from './screens/Characters';
 import { Instances } from './screens/Instances';
@@ -132,6 +133,7 @@ export function App() {
         {!glance && <Footer />}
       </div>
       <ModalHost />
+      <Tour />
       <Toasts />
     </OverlayProvider>
   );
