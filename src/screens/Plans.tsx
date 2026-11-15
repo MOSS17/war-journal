@@ -81,9 +81,14 @@ export function Plans() {
       title="War Plans"
       eyebrow={plans.length ? `${activeCount} active of ${plans.length} plans` : 'Personal goals, not in-game quests'}
       actions={
-        <button type="button" className="btn" onClick={() => open({ kind: 'plan' })}>
-          + New plan
-        </button>
+        <>
+          <button type="button" className="btn2" onClick={() => open({ kind: 'templates' })}>
+            Starter plans
+          </button>
+          <button type="button" className="btn" onClick={() => open({ kind: 'plan' })}>
+            + New plan
+          </button>
+        </>
       }
     >
       {plans.length === 0 ? (
@@ -91,9 +96,14 @@ export function Plans() {
             framed
             title="No war plans yet"
             action={
-              <button type="button" className="btn" onClick={() => open({ kind: 'plan' })}>
-                + New war plan
-              </button>
+              <div className="row-gap">
+                <button type="button" className="btn" onClick={() => open({ kind: 'templates' })}>
+                  Pick a starter plan
+                </button>
+                <button type="button" className="btn2" onClick={() => open({ kind: 'plan' })}>
+                  + New war plan
+                </button>
+              </div>
             }
           >
             Pick something to work toward: clear a dungeon, reach a level, hit a profession skill or save for your mount. Dungeon

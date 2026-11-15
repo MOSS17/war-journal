@@ -2,6 +2,7 @@ import { useOverlay } from '../components/overlay';
 import { CharacterForm } from './CharacterForm';
 import { ProgressForm } from './ProgressForm';
 import { PlanForm } from './PlanForm';
+import { StarterPlans } from './StarterPlans';
 import { JournalForm } from './JournalForm';
 import { LibraryForm } from './LibraryForm';
 import { InstanceProgressForm } from './InstanceProgressForm';
@@ -20,6 +21,8 @@ export function ModalHost() {
       return <ProgressForm key={key} characterId={m.characterId} onClose={close} />;
     case 'plan':
       return <PlanForm key={key} id={m.id} preset={m.preset} onClose={close} />;
+    case 'templates':
+      return <StarterPlans key={key} ownerId={m.ownerId} onClose={close} />;
     case 'journal':
       return <JournalForm key={key} id={m.id} preset={m.preset} onClose={close} />;
     case 'library':

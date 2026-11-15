@@ -6,6 +6,7 @@ export type ModalSpec =
   | { kind: 'character'; id?: string }
   | { kind: 'progress'; characterId?: string }
   | { kind: 'plan'; id?: string; preset?: { type?: PlanType; instanceId?: string; ownerId?: string } }
+  | { kind: 'templates'; ownerId?: string }
   | {
       kind: 'journal';
       id?: string;
