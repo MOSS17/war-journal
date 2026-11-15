@@ -27,6 +27,7 @@ Without `npm run db:env`, the dev server uses the hosted project from `.env.loca
 - **Storage:** Supabase (see Database below). Every visitor gets an anonymous account the first time they save. Screenshots are resized to 1920 px (WebP) and kept in the private `screenshots` bucket. Use **Backup & data** in the footer to export everything as one JSON file, or to restore one.
 - **Seed data:** `src/data/instances.json` (29 dungeons, 3 raids) and `src/data/events.json` (countdown dates) are loaded into shared catalog tables. A player's edits to a seeded row are stored as their own override; the catalog keeps the reference data (territory, Horde access, quests) current.
 - **Game logic** (`src/lib/logic.ts`, tested): difficulty colours (trivial → deadly), "fits my level", money, and plan progress.
+- **What's next** (`src/lib/milestones.ts`, tested): the next trainer visit, level unlocks (Legacy points, riding, dual spec; facts and costs in `LEVEL_UNLOCKS` in `src/lib/guides.ts`, each with its source), Horde-side dungeons coming into range, and where to quest. Shown on the character page and, ranked to the two most useful, on the War Board.
 - **Plan sync** (`src/db/actions.ts`): marking instance progress, levels, skills or gold completes matching war plans. Ticking a wing on a plan writes back to that instance's progress.
 
 ## Screens

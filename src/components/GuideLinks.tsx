@@ -2,7 +2,7 @@ import { Icon } from './icons';
 import { useOverlay } from './overlay';
 import { saveLibraryItem } from '../db/actions';
 import { useLibrary } from '../db/hooks';
-import type { FieldLink } from '../lib/guides';
+import type { GuideLink } from '../lib/types';
 
 function host(url: string) {
   try {
@@ -13,7 +13,7 @@ function host(url: string) {
 }
 
 /** A guide link with a "Save to Library" button. */
-export function GuideLinks({ links, category }: { links: FieldLink[]; category: string }) {
+export function GuideLinks({ links, category }: { links: GuideLink[]; category: string }) {
   const { toast } = useOverlay();
   const library = useLibrary();
   const saved = new Set(library?.map((i) => i.url));
