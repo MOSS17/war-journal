@@ -14,6 +14,7 @@ const NAV = [
   { to: '/plans', label: 'War Plans' },
   { to: '/journal', label: 'Journal' },
   { to: '/library', label: 'Library' },
+  { to: '/guide', label: 'Field Guide' },
 ];
 
 function NavBar() {

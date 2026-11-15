@@ -10,6 +10,7 @@ import { Plans } from './screens/Plans';
 import { Journal } from './screens/Journal';
 import { Library } from './screens/Library';
 import { Glance } from './screens/Glance';
+import { Guide } from './screens/Guide';
 import { useLiveUpdates } from './db/store';
 import { importLocalData } from './db/localImport';
 import { uploadLocalScreenshots } from './db/actions';
@@ -124,6 +125,7 @@ export function App() {
           <Route path="/plans" element={<Plans />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/library" element={<Library />} />
+          <Route path="/guide" element={<Guide />} />
           <Route path="/glance" element={<Glance />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
