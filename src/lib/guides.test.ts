@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLASSES, MAX_LEVEL, PRIMARY_PROFESSIONS, SECONDARY_PROFESSIONS } from './gamedata';
-import { CLASS_GUIDES, PROFESSION_GUIDES, ZONE_GUIDES, bracketLabel, zoneBracket, type FieldLink } from './guides';
+import { CLASS_GUIDES, LEVEL_UNLOCKS, PROFESSION_GUIDES, ZONE_GUIDES, bracketLabel, zoneBracket, type FieldLink } from './guides';
 
 function expectLinks(links: FieldLink[]) {
   expect(links.length).toBeGreaterThan(0);
@@ -41,6 +41,12 @@ describe('Field Guide content', () => {
       if (!z.isNewInForever) expect(z.territory).not.toBe('alliance');
     }
     const levels = ZONE_GUIDES.map((z) => z.minLevel);
+    expect(levels).toEqual([...levels].sort((a, b) => a - b));
+  });
+
+  it('names every cost so a savings plan reads well', () => {
+    for (const u of LEVEL_UNLOCKS) if (u.copper) expect(u.saveFor, u.id).toBeTruthy();
+    const levels = LEVEL_UNLOCKS.map((u) => u.level);
     expect(levels).toEqual([...levels].sort((a, b) => a - b));
   });
 

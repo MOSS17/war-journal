@@ -302,6 +302,8 @@ export interface LevelUnlock {
   when: 'reach' | 'learn';
   /** Gold it takes, in copper, when a source states it. */
   copper?: number;
+  /** For costs: finishes "Save for …". */
+  saveFor?: string;
   links: FieldLink[];
 }
 
@@ -329,6 +331,7 @@ export const LEVEL_UNLOCKS: LevelUnlock[] = [
     detail: 'Apprentice Riding is 100g at your race’s riding trainer, plus 20g for the mount. Honored with your home faction takes 10% off both.',
     when: 'learn',
     copper: 120 * GOLD,
+    saveFor: 'riding',
     links: [RIDING_GUIDE],
   },
   {
@@ -338,6 +341,7 @@ export const LEVEL_UNLOCKS: LevelUnlock[] = [
     detail: 'Your class trainer sells a second talent setup for 50g, so you can swap between, say, questing and dungeon talents.',
     when: 'learn',
     copper: 50 * GOLD,
+    saveFor: 'dual spec',
     links: [FOREVER_WIKI],
   },
   legacy(60),
@@ -348,6 +352,7 @@ export const LEVEL_UNLOCKS: LevelUnlock[] = [
     detail: 'Journeyman Riding is 1,000g, plus 200g for the faster mount.',
     when: 'learn',
     copper: 1200 * GOLD,
+    saveFor: 'a fast mount',
     links: [RIDING_GUIDE],
   },
 ];

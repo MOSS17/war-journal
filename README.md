@@ -28,6 +28,7 @@ Without `npm run db:env`, the dev server uses the hosted project from `.env.loca
 - **Seed data:** `src/data/instances.json` (29 dungeons, 3 raids) and `src/data/events.json` (countdown dates) are loaded into shared catalog tables. A player's edits to a seeded row are stored as their own override; the catalog keeps the reference data (territory, Horde access, quests) current.
 - **Game logic** (`src/lib/logic.ts`, tested): difficulty colours (trivial → deadly), "fits my level", money, and plan progress.
 - **What's next** (`src/lib/milestones.ts`, tested): the next trainer visit, level unlocks (Legacy points, riding, dual spec; facts and costs in `LEVEL_UNLOCKS` in `src/lib/guides.ts`, each with its source), Horde-side dungeons coming into range, and where to quest. Shown on the character page and, ranked to the two most useful, on the War Board.
+- **Starter plans** (`src/lib/planTemplates.ts`, tested): ready-made war plans for a character (next level goal, pick professions, next Horde-side dungeon, First Aid 75, saving for riding / dual spec / a fast mount, reach 60), added from War Plans or the plan form. The character page's **Saving up** frame shows gold against each upcoming cost and turns one into a gold plan.
 - **Plan sync** (`src/db/actions.ts`): marking instance progress, levels, skills or gold completes matching war plans. Ticking a wing on a plan writes back to that instance's progress.
 
 ## Screens

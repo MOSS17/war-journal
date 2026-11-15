@@ -3,6 +3,7 @@ import { Page } from '../components/Shell';
 import { CLASS_GUIDES } from '../lib/guides';
 import { GuideLinks } from '../components/GuideLinks';
 import { WhatsNext } from '../components/WhatsNext';
+import { GoldGoals } from '../components/GoldGoals';
 import { Avatar, Bar, DiffDot, EmptyState, Frame, Money, Rivets, StatusPill } from '../components/ui';
 import { PlanMini } from '../components/domain';
 import { useOverlay } from '../components/overlay';
@@ -198,6 +199,11 @@ function CharacterDetail({ c }: { c: Character }) {
           {c.status === 'active' && (
             <Frame title="What's next" titleId="cd-next" style={{ gap: 12 }}>
               <WhatsNext c={c} instances={instances} progress={ctx.progress} />
+            </Frame>
+          )}
+          {c.status === 'active' && (
+            <Frame title="Saving up" titleId="cd-gold" style={{ gap: 12 }}>
+              <GoldGoals c={c} plans={plans} />
             </Frame>
           )}
           <Frame

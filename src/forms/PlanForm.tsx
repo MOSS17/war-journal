@@ -301,6 +301,14 @@ export function PlanForm({
       }
     >
       <div className="mb">
+        {!id && (
+          <p className="help">
+            Not sure what to aim for?{' '}
+            <button type="button" className="linkbtn" onClick={() => open({ kind: 'templates', ownerId: ownerId === ACCOUNT ? undefined : ownerId })}>
+              Pick a starter plan
+            </button>
+          </p>
+        )}
         <div className="field" style={{ gap: 8 }}>
           <span className="lab" id="pf-type">
             What kind of plan?
