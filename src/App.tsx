@@ -13,7 +13,7 @@ import { Glance } from './screens/Glance';
 import { useLiveUpdates } from './db/store';
 import { importLocalData } from './db/localImport';
 import { uploadLocalScreenshots } from './db/actions';
-import { pendingCarryOver } from './db/account';
+import { pendingCarryOver, touchLastSeen } from './db/account';
 import { useAccount } from './db/supabase';
 import { SaveError } from './db/supabase';
 
@@ -68,6 +68,10 @@ function CloudSync() {
   useLiveUpdates();
   // After signing in (by code, or by a link that reloaded the page), offer this browser's anonymous journal.
   const savedId = account && !account.anonymous ? account.id : null;
+  const accountId = account?.id ?? null;
+  useEffect(() => {
+    if (accountId) touchLastSeen().catch(() => {});
+  }, [accountId]);
   useEffect(() => {
     if (!savedId || window.location.pathname === '/glance') return;
     pendingCarryOver()

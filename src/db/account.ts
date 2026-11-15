@@ -4,6 +4,7 @@
 // journal offers to copy that journal across (the account's rows win).
 import type { AuthError } from '@supabase/supabase-js';
 import { db, getMeta, setMeta } from './db';
+import { captchaToken } from './captcha';
 import { currentAccount, sessionReady, supabase } from './supabase';
 import { fetchEventCatalog, fetchInstanceCatalog, fetchRecords, queryClient, type RecordKind, type StoredRecord } from './store';
 import { BACKUP_FORMAT, BACKUP_VERSION, blobToDataUrl, type Backup } from './backup';
@@ -54,7 +55,7 @@ export async function requestSignIn(email: string): Promise<EmailResult> {
   await stashAnonymousJournal();
   const { error } = await supabase.auth.signInWithOtp({
     email: email.trim(),
-    options: { shouldCreateUser: false, emailRedirectTo: redirectTo() },
+    options: { shouldCreateUser: false, emailRedirectTo: redirectTo(), captchaToken: await captchaToken() },
   });
   return error ? explain(error) : { ok: true };
 }
@@ -85,6 +86,29 @@ export async function deleteAccount(): Promise<void> {
   await db.images.clear();
   await setMeta(CARRY_KEY, null);
   queryClient.clear();
+}
+
+// ---------- Activity ----------
+
+/** Marks the account as used today (at most once a day per browser), so the cleanup of unused anonymous accounts skips it. */
+export async function touchLastSeen(): Promise<void> {
+  await sessionReady;
+  const me = currentAccount();
+  if (!me) return;
+  const key = 'war-journal:last-seen';
+  const mark = `${me.id}:${new Date().toISOString().slice(0, 10)}`;
+  try {
+    if (localStorage.getItem(key) === mark) return;
+  } catch {
+    // Storage blocked: just update.
+  }
+  const { error } = await supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('user_id', me.id);
+  if (error) return;
+  try {
+    localStorage.setItem(key, mark);
+  } catch {
+    // Fine: it updates again next load.
+  }
 }
 
 // ---------- Copying an anonymous journal into an account ----------
