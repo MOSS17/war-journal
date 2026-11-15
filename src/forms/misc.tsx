@@ -6,6 +6,7 @@ import { Icon } from '../components/icons';
 import { useOverlay, type ModalSpec } from '../components/overlay';
 import { useCharacters, useCounts, useEvent, useInstance } from '../db/hooks';
 import { useAccount } from '../db/supabase';
+import { deleteLocalCopy, localCopy, type LocalCopy } from '../db/localImport';
 import { addInstance, deleteEvent, deleteInstance, saveEvent, updateInstance } from '../db/actions';
 import { downloadJson, exportAll, importAll, parseBackup, resetAll } from '../db/backup';
 import { MAX_LEVEL } from '../lib/gamedata';
@@ -466,6 +467,10 @@ export function DataModal({ onClose }: ModalProps) {
   const { toast, open } = useOverlay();
   const counts = useCounts();
   const account = useAccount();
+  const [oldCopy, setOldCopy] = useState<LocalCopy | null>(null);
+  useEffect(() => {
+    localCopy().then(setOldCopy, () => setOldCopy(null));
+  }, []);
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -541,6 +546,36 @@ export function DataModal({ onClose }: ModalProps) {
             <Icon.alert />
             {error}
           </span>
+        )}
+        {oldCopy && (
+          <div style={{ borderTop: '1px solid var(--sunk-edge)', paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span className="lab">This browser’s old copy</span>
+            <span className="help">
+              From before your journal moved online, this browser still keeps {oldCopy.characters} character
+              {oldCopy.characters === 1 ? '' : 's'}, {oldCopy.journal} journal {oldCopy.journal === 1 ? 'entry' : 'entries'} and{' '}
+              {oldCopy.screenshots} screenshot{oldCopy.screenshots === 1 ? '' : 's'}. Your journal is safe online, so you can free the space.
+            </span>
+            <button
+              type="button"
+              className="btn2"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={() =>
+                open({
+                  kind: 'confirm',
+                  title: 'Delete this browser’s old copy?',
+                  body: 'Only the copy stored in this browser is deleted. Your journal and screenshots online stay as they are.',
+                  confirmLabel: 'Delete old copy',
+                  back: { kind: 'data' },
+                  onConfirm: async () => {
+                    await deleteLocalCopy();
+                    toast('Old copy deleted from this browser');
+                  },
+                })
+              }
+            >
+              Delete the old copy
+            </button>
+          </div>
         )}
         <div style={{ borderTop: '1px solid var(--sunk-edge)', paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <span className="lab">Start over</span>

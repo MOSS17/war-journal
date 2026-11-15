@@ -79,8 +79,9 @@ export async function ensureUser(): Promise<string> {
   await sessionReady;
   const { data } = await supabase.auth.getSession();
   if (data.session) return data.session.user.id;
-  signingIn ??= supabase.auth
-    .signInAnonymously()
+  signingIn ??= import('./captcha')
+    .then(({ captchaToken }) => captchaToken())
+    .then((token) => supabase.auth.signInAnonymously({ options: { captchaToken: token } }))
     .then(({ data: d, error }) => {
       if (error || !d.user) throw new SaveError('Could not start your journal. Check your connection and try again.', error);
       setAccount(toAccount(d.user));

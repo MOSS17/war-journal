@@ -62,3 +62,41 @@ export function importLocalData(): Promise<ImportResult | null> {
     return { records: rows.length };
   });
 }
+
+// ---------- The old local copy ----------
+
+export interface LocalCopy {
+  characters: number;
+  journal: number;
+  screenshots: number;
+}
+
+/** What the browser still keeps from before its journal moved online, or null when there's nothing to offer deleting. */
+export async function localCopy(): Promise<LocalCopy | null> {
+  const done = await getMeta<{ records?: number } | null>(DONE_KEY, null);
+  // Only once the copy has really been moved up; a skipped import keeps its data.
+  if (!done?.records) return null;
+  // A pending copy-or-leave offer keeps its screenshots here too; wait until it's answered.
+  if (await getMeta('carryOver', null)) return null;
+  const [characters, journal, screenshots, other] = await Promise.all([
+    db.characters.count(),
+    db.journal.count(),
+    db.images.count(),
+    Promise.all(PLAYER_KINDS.map((k) => db.table(k).count())).then((n) => n.reduce((a, b) => a + b, 0)),
+  ]);
+  return characters + journal + screenshots + other > 0 ? { characters, journal, screenshots } : null;
+}
+
+/**
+ * Deletes the browser's old copy. Screenshots its journal points at are
+ * uploaded first if they haven't been. Remembers that the move was done, so
+ * nothing is imported again.
+ */
+export async function deleteLocalCopy(): Promise<void> {
+  const { uploadLocalScreenshots } = await import('./actions');
+  await uploadLocalScreenshots();
+  await db.transaction('rw', db.tables, async () => {
+    for (const t of db.tables) if (t.name !== 'meta') await t.clear();
+    await db.meta.where('key').noneOf([DONE_KEY, 'carryOver']).delete();
+  });
+}

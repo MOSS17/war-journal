@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc && tsc -p supabase/tests",
+    "typecheck": "tsc && tsc -p supabase/tests && tsc -p tsconfig.server.json",
     "test:db": "vitest run --config vitest.db.config.ts",
     "db:catalog": "node scripts/catalog-sql.mjs",
     "db:env": "node scripts/local-env.mjs"
